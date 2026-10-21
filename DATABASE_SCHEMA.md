@@ -1,6 +1,6 @@
 # Database schema
 
-Migration: `supabase/migrations/202610210001_initial.sql`. Seed: `supabase/seed.sql`.
+Migrations: `supabase/migrations/202610210001_initial.sql`, then `supabase/migrations/202610210002_frontend.sql`. Seed: `supabase/seed.sql`, followed by `supabase/demo_enrichment.sql`. Existing local volumes upgrade without deleting records.
 
 All entity tables use UUID primary keys and creation timestamps (attempts use `started_at`); the score mapping has a composite key and timestamp. Content tables have `is_active`; demo listings have `is_demo`.
 
@@ -10,15 +10,22 @@ All entity tables use UUID primary keys and creation timestamps (attempts use `s
 | quiz_questions | Unique position 1–20, exact English text, max_selections 1–2 |
 | quiz_options | FK question_id; text, normalized value; unique question/position and question/value |
 | option_category_scores | Composite PK option_id/category_id, both FKs; score 0–3 |
-| career_roles | FK category_id, title, description; unique category/title |
+| career_roles | FK category_id, title, description, suggested_next_step; unique category/title |
 | courses | FK category_id; title, summary, provider, price_label, URL, study_option, affordable, flexible |
-| advisors | FK category_id; demo name, specialty, contact, support_types |
-| ads | category_ids UUID array, title, URL, placement_key, is_sponsored always true, optional starts_at/ends_at |
+| advisors | FK category_id; demo name, specialty, summary, contact (not returned by public listing/detail), support_types |
+| ads | category_ids UUID array, title, summary, provider_name, URL, placement_key, is_sponsored always true, optional starts_at/ends_at |
 | anonymous_sessions | Browser-generated UUID, created_at, expires_at (90 days) |
-| quiz_attempts | FK session_id; status started/completed, started_at/completed_at, answers_json/result_json |
-| course_interests | FKs session_id/course_id, unique session/course |
-| advisor_leads | FKs session_id/advisor_id; student_name, email/phone contact_method, contact_value, consent_at, expires_at |
+| quiz_attempts | FK session_id; optional entry_reason (two approved values), status started/completed, started_at/completed_at, answers_json/result_json |
+| course_interests | FKs session_id/course_id, optional originating attempt_id, unique session/course (first association retained) |
+| advisor_leads | FKs session_id/advisor_id, optional originating attempt_id; student_name, email/phone contact_method, contact_value, consent_at, expires_at |
 | analytics_events | FK session_id, optional FK attempt_id, approved event_name, optional entity_id, small metadata object, expires_at |
+
+Two additional private tables support the frontend:
+
+- `write_receipts`: composite primary key `(session_id, operation, request_key)`, normalized request hash, non-contact success response, created_at. Session deletion cascades receipts. Operations include the target entity. No duplicate lead contact payload is stored here.
+- `app_migrations`: version markers for additive migrations; no browser access.
+
+Action attempt foreign keys use `ON DELETE SET NULL`; API/RPC checks enforce the supplied session owns the attempt before any new write. The idempotent SQL function validates ownership in the transaction.
 
 Ads can reference multiple categories without an extra join table; triggers validate array references on writes and restrict deletion of an ad-referenced category. Content foreign keys otherwise restrict deletion. API validation checks polymorphic analytics entity references against active courses/advisors. Database checks constrain status/completion consistency, quiz positions and cardinality limits, scores, study types, lead field sizes, event names, metadata object type/size, URL scheme prefixes, and ad date order. API URL validation additionally rejects malformed URLs and URL credentials.
 
@@ -26,9 +33,9 @@ Primary/unique keys provide lookup indexes. Additional indexes cover attempts/le
 
 ## Access and atomicity
 
-RLS is enabled on all 13 tables. No public access policies exist; table privileges are revoked from `anon` and `authenticated`. Browsers use the Next.js API exclusively. The server-only Supabase service role has table privileges and bypasses RLS; the API validates session ownership before accessing an attempt. Never expose that key or use it in the frontend.
+RLS is enabled on all 15 tables. No public access policies exist; table privileges are revoked from `anon` and `authenticated`. Browsers use the Next.js API exclusively. The server-only Supabase service role has table privileges and bypasses RLS; the API validates session ownership before accessing an attempt. Never expose that key or use it in the frontend.
 
-RPCs `start_quiz`, `complete_quiz`, `record_course_interest`, and `record_advisor_lead` atomically write the action and its server-owned event. Only service_role receives execute permission. Completion locks the attempt row; identical retries return the stored result; differing retries conflict. Course interest is unique by session/course, with `buy_interest` recorded once. Advisor leads represent individual requests; repeated successful submissions create additional requests/events. No email or booking occurs.
+RPCs `start_quiz`, `complete_quiz`, `record_course_interest`, and `record_advisor_lead` atomically write the action and its server-owned event. Only service_role receives execute permission. Completion locks the attempt row; identical retries return the stored result; differing retries conflict. Course interest is unique by session/course, with `buy_interest` recorded once. The API uses `frontend_write` for start/interest/leads: an advisory transaction lock and private receipt enforce identical-key replay and changed-body conflicts atomically. New advisor keys create individual requests; replayed keys return the original lead. Legacy RPCs remain restricted to service_role for compatibility. No email or booking occurs.
 
 ## Retention
 
@@ -38,7 +45,7 @@ All session-linked foreign keys cascade on session deletion. Expiry is anchored 
 select public.cleanup_expired_data();
 ```
 
-This removes expired events/leads and sessions, cascading attempts/interests/leads/events. Scheduling is not installed automatically; use a Supabase scheduled job or run manually for the demo. Records may remain physically stored after expiry until cleanup runs. Sessions are pseudonymous bearer identifiers, not authentication; anyone with a session UUID can access its records through the API.
+This removes expired events/leads and sessions, cascading attempts/interests/leads/events/write receipts. Scheduling is not installed automatically; use a Supabase scheduled job or run manually for the demo. Records may remain physically stored after expiry until cleanup runs. Sessions are pseudonymous bearer identifiers, not authentication; anyone with a session UUID can access its records through the API.
 
 ## Seed and verification
 

@@ -9,7 +9,9 @@ services:
       - career_mvp_local:/var/lib/postgresql/data
       - ./scripts/local-roles.sql:/docker-entrypoint-initdb.d/00-roles.sql:ro
       - ./supabase/migrations/202610210001_initial.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
-      - ./supabase/seed.sql:/docker-entrypoint-initdb.d/02-seed.sql:ro
+      - ./supabase/migrations/202610210002_frontend.sql:/docker-entrypoint-initdb.d/02-frontend.sql:ro
+      - ./supabase/seed.sql:/docker-entrypoint-initdb.d/03-seed.sql:ro
+      - ./supabase/demo_enrichment.sql:/docker-entrypoint-initdb.d/04-enrichment.sql:ro
     healthcheck:
       test: [CMD-SHELL, 'pg_isready -U postgres']
       interval: 2s
