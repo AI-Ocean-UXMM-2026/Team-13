@@ -1,5 +1,13 @@
 import { z } from "zod";
-import { active, attempt, catalog, check, db, quiz } from "./db";
+import {
+  active,
+  attempt,
+  catalog,
+  check,
+  db,
+  quiz,
+  requireFrontendSchema,
+} from "./db";
 import { body, session } from "./http";
 import {
   ApiError,
@@ -47,6 +55,7 @@ async function write(
   );
 }
 export async function start(req: Request) {
+  await requireFrontendSchema();
   const sid = await session(req);
   const input = parse(
     z.strictObject({
@@ -146,6 +155,7 @@ function publicAdvisor(a: Advisor) {
   };
 }
 export async function interest(req: Request, id: string) {
+  await requireFrontendSchema();
   const sid = await session(req);
   const input = parse(
     z.strictObject({ attemptId: uuid.optional() }),
@@ -157,6 +167,7 @@ export async function interest(req: Request, id: string) {
   return write(req, sid, `interest:${id}`, { ...input, courseId: id });
 }
 export async function lead(req: Request, id: string) {
+  await requireFrontendSchema();
   const sid = await session(req),
     input = parse(leadSchema, await body(req));
   await advisorDetail(req, id);
@@ -211,15 +222,13 @@ export async function event(req: Request) {
     if (!entity) throw new ApiError(400, "INVALID_INPUT", "Unknown entity");
   }
   check(
-    await db()
-      .from("analytics_events")
-      .insert({
-        session_id: sid,
-        attempt_id: input.attemptId,
-        event_name: input.eventName,
-        entity_id: input.entityId,
-        metadata: input.metadata,
-      }),
+    await db().from("analytics_events").insert({
+      session_id: sid,
+      attempt_id: input.attemptId,
+      event_name: input.eventName,
+      entity_id: input.entityId,
+      metadata: input.metadata,
+    }),
   );
   return { recorded: true };
 }
@@ -230,11 +239,13 @@ export async function health() {
       "NOT_CONFIGURED",
       "Database configuration is missing",
     );
+  await requireFrontendSchema();
   const res = await db()
     .from("career_categories")
     .select("id", { count: "exact", head: true })
     .eq("is_active", true);
-  if (res.error || res.count !== 6)
+  if (res.error) check(res);
+  if (res.count !== 6)
     throw new ApiError(
       503,
       "DATABASE_UNAVAILABLE",

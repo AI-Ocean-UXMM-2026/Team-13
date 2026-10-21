@@ -14,7 +14,8 @@
     "test:integration:local": "node scripts/local-integration.mjs",
     "lint": "eslint src",
     "test:e2e": "playwright test",
-    "test:frontend:integration": "node scripts/frontend-integration-local.mjs"
+    "test:frontend:integration": "node scripts/frontend-integration-local.mjs",
+    "db:check": "node scripts/check-db.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.0.0",

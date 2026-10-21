@@ -55,6 +55,7 @@ With the local app running, use another terminal:
 npm test                         # backend and frontend utility tests
 npm run lint                     # TypeScript source lint
 npm run typecheck                # strict TypeScript
+npm run db:check                 # read-only checks against the configured database
 npm run test:integration:local    # original 43-assertion API journey
 npm run test:frontend:integration # concurrency, attempt linkage, details, privacy
 npx playwright install chromium  # once per machine
@@ -109,3 +110,11 @@ select public.cleanup_expired_data();
 No cleanup schedule is installed automatically. Public hosting, real advisor/provider records, actual contact routing, public-launch consent review, and reviewed Burmese translations remain future work.
 
 See [API_CONTRACT.md](API_CONTRACT.md), [DATABASE_SCHEMA.md](DATABASE_SCHEMA.md), [SCORING_LOGIC.md](SCORING_LOGIC.md), [frontend PRD](docs/source/frontend_prd.md), and [implementation notes](docs/FRONTEND_READINESS.md).
+
+## Debugging a hosted database setup mismatch
+
+On `codex/debug-database-connection`, run `npm run db:check` to inspect the configured database with zero-row reads, counts, and function metadata. It does not apply SQL, write student data, or print credentials. A successful basic network connection does not establish schema compatibility.
+
+The hosted database inspected during this investigation has the base 20-question quiz, but is missing the frontend migration: entry_reason/attempt_id/content columns, write_receipts, app_migrations, and frontend_write. Review and apply `supabase/migrations/202610210002_frontend.sql`, then `supabase/demo_enrichment.sql` through an authorized SQL connection. Do not rerun the original migration or reset the database. This debug branch does not modify the hosted database automatically or bypass retry protection.
+
+Health now checks the frontend migration marker as well as the seeded categories. Missing setup returns `503 SCHEMA_NOT_READY`; the UI shows an actionable setup message. Start/interest/lead routes check readiness before creating anonymous sessions or invoking action writes. Network and credential failures are distinguished from missing schema without exposing raw database errors.

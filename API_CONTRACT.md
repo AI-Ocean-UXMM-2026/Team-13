@@ -18,7 +18,7 @@ All POST requests require `Content-Type: application/json`. Unknown body keys ar
 | POST /api/advisors/:advisorId/leads | Session header, lead body below; idempotency header | 201 `{leadId,recorded:true,message}` after lead and advisor_lead_submitted |
 | GET /api/ads | Required `?category=I,C` | 200 `{placements: {[placementKey]: SponsoredAd[]}}` |
 | POST /api/events | Session header, event body below | 201 `{recorded:true}` |
-| GET /api/health | No session required | 200 `{status:'ok',database:'reachable'}`; 503 if missing config, database unreachable, or categories unseeded |
+| GET /api/health | No session required | 200 `{status:'ok',database:'reachable'}`; 503 if missing config, database unreachable, frontend migration absent, or categories unseeded |
 
 Categories are the six **codes** `R,I,A,S,E,C` (comma-separated, max six). The PRD's `technology` query was illustrative; it is not a RIASEC code. No pre-existing frontend API existed to preserve. Courses/advisors without a filter return all active records. Use result.topCategories for related listings. Ads require a category filter, respect active status and dates (inclusive start/exclusive end), and are always separate sponsored placements.
 
@@ -104,6 +104,6 @@ All failures return `{error:{code:string,message:string}}` without SQL details, 
 | 413 | Body exceeds 16 KB |
 | 429 | Demo rate limit; Retry-After: 60 |
 | 500 | Generic database/server error or invalid content/scoring configuration |
-| 503 | Missing database configuration or unavailable/unseeded health dependency |
+| 503 | Missing configuration, network/access failure, missing frontend schema (`SCHEMA_NOT_READY`), or unseeded health dependency |
 
 Every endpoint is limited to 120 requests/minute per apparent IP per process. The limiter is a demo safeguard; trusted proxy configuration and shared durable limiting are required before a public multi-instance deployment.

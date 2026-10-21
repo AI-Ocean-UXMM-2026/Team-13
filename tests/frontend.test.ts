@@ -156,3 +156,27 @@ test("analytics rejects unknown/private metadata and failures do not reject prim
   await track({ eventName: "results_viewed", attemptId });
   assert.equal(calls, 2);
 });
+test("schema setup errors show an actionable allowlisted message without trusting raw server text", async (ctx) => {
+  const original = globalThis.fetch;
+  ctx.after(() => {
+    globalThis.fetch = original;
+  });
+  globalThis.fetch = async () =>
+    Response.json(
+      {
+        error: {
+          code: "SCHEMA_NOT_READY",
+          message: "SQL detail and a secret should never display",
+        },
+      },
+      { status: 503 },
+    );
+  await assert.rejects(
+    api("/api/test", z.object({ ok: z.boolean() })),
+    (e) =>
+      e instanceof RequestError &&
+      e.status === 503 &&
+      e.message.includes("migration") &&
+      !e.message.includes("SQL detail"),
+  );
+});

@@ -1,7 +1,7 @@
 import "server-only";
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import type { Catalog, Question, Option } from "./types";
-import { ApiError } from "./validation";
+import { ApiError, databaseFailure } from "./validation";
 let client: SupabaseClient | undefined;
 export function db() {
   const url = process.env.SUPABASE_URL,
@@ -24,30 +24,27 @@ export function db() {
 }
 export function check<T>(response: {
   data: T;
+  status?: number;
   error: {
     code?: string;
   } | null;
 }): NonNullable<T> {
-  if (response.error) {
-    if (["P0404", "P0409", "P0410"].includes(response.error.code || ""))
-      throw new ApiError(
-        Number(response.error.code!.slice(1)),
-        "WRITE_REJECTED",
-        "This request is unavailable, expired, or conflicts with a previous request",
-      );
-    if (response.error.code === "23505")
-      throw new ApiError(
-        409,
-        "CONFLICT",
-        "This attempt has already been completed with different answers",
-      );
-    throw new ApiError(
-      500,
-      "DATABASE_ERROR",
-      "The operation could not be completed",
-    );
-  }
+  if (response.error)
+    throw databaseFailure(response.error.code, response.status);
   return response.data as NonNullable<T>;
+}
+export async function requireFrontendSchema() {
+  const result = await db()
+    .from("app_migrations")
+    .select("version", { head: true, count: "exact" })
+    .eq("version", "202610210002");
+  if (result.error) throw databaseFailure(result.error.code, result.status);
+  if (result.count !== 1)
+    throw new ApiError(
+      503,
+      "SCHEMA_NOT_READY",
+      "The database needs the frontend setup migration",
+    );
 }
 export async function active<T>(table: string): Promise<T[]> {
   return check(

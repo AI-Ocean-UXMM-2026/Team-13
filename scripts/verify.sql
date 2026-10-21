@@ -25,4 +25,16 @@ select cleanup_expired_data();
 do $$ begin
  if exists(select 1 from anonymous_sessions where id='00000000-0000-4000-8000-000000000001') or exists(select 1 from quiz_attempts where session_id='00000000-0000-4000-8000-000000000001') or exists(select 1 from analytics_events where session_id='00000000-0000-4000-8000-000000000001') or exists(select 1 from write_receipts where session_id='00000000-0000-4000-8000-000000000001') then raise exception 'retention failed'; end if;
 end $$;
+-- Hosted Supabase may install pgcrypto outside public. Writes must not depend on it.
+create schema if not exists migration_hash_test;
+alter extension pgcrypto set schema migration_hash_test;
+do $$ declare sid uuid:=gen_random_uuid(); request_key uuid:=gen_random_uuid(); first_result jsonb; replay jsonb;
+begin
+ if encode(sha256(convert_to('{"entryReason":"not_sure_yet"}','UTF8')),'hex') <> encode(migration_hash_test.digest('{"entryReason":"not_sure_yet"}','sha256'),'hex') then raise exception 'request hash compatibility failed'; end if;
+ insert into anonymous_sessions(id) values(sid);
+ first_result:=frontend_write(sid,request_key,'start','{"entryReason":"not_sure_yet"}');
+ replay:=frontend_write(sid,request_key,'start','{"entryReason":"not_sure_yet"}');
+ if first_result<>replay or not(first_result ? 'attemptId') then raise exception 'idempotent start failed with relocated extension'; end if;
+ if (select count(*) from quiz_attempts where session_id=sid)<>1 then raise exception 'duplicate attempt'; end if;
+end $$;
 rollback;

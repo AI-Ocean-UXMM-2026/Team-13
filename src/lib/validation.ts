@@ -8,6 +8,48 @@ export class ApiError extends Error {
     super(message);
   }
 }
+// Translate infrastructure failures without returning database details or credentials.
+export function databaseFailure(code?: string, status?: number): ApiError {
+  if (status === 0)
+    return new ApiError(
+      503,
+      "DATABASE_UNREACHABLE",
+      "The database cannot be reached",
+    );
+  if (status === 401 || status === 403)
+    return new ApiError(
+      503,
+      "DATABASE_ACCESS_DENIED",
+      "Database access is not configured correctly",
+    );
+  if (
+    ["PGRST202", "PGRST204", "PGRST205", "42883", "42703", "42P01"].includes(
+      code ?? "",
+    )
+  )
+    return new ApiError(
+      503,
+      "SCHEMA_NOT_READY",
+      "The database needs the frontend setup migration",
+    );
+  if (["P0404", "P0409", "P0410"].includes(code ?? ""))
+    return new ApiError(
+      Number(code!.slice(1)),
+      "WRITE_REJECTED",
+      "This request is unavailable, expired, or conflicts with a previous request",
+    );
+  if (code === "23505")
+    return new ApiError(
+      409,
+      "CONFLICT",
+      "This attempt has already been completed with different answers",
+    );
+  return new ApiError(
+    500,
+    "DATABASE_ERROR",
+    "The operation could not be completed",
+  );
+}
 export const uuid = z.uuid();
 export const answerSchema = z.strictObject({
   questionId: uuid,

@@ -49,18 +49,34 @@ export async function api<T>(
         "We could not read the response. Please try again.",
       );
     }
+    const errorCode = z
+      .object({ error: z.object({ code: z.string() }) })
+      .safeParse(data);
+    const setupMessages: Record<string, string> = {
+      SCHEMA_NOT_READY:
+        "This database needs a setup update. Please ask the project maintainer to apply the frontend migration.",
+      DATABASE_UNREACHABLE:
+        "The database is temporarily unreachable. Please check the connection and retry.",
+      DATABASE_ACCESS_DENIED:
+        "Database access is not configured correctly. Please contact the project maintainer.",
+      NOT_CONFIGURED:
+        "Database settings are missing. Please contact the project maintainer.",
+    };
     if (!response.ok)
       throw new RequestError(
         response.status,
-        response.status === 410
-          ? "Your session has expired. Start a new session to continue."
-          : response.status === 404
-            ? "This item is unavailable for this session."
-            : response.status === 429
-              ? "Too many requests. Please wait one minute before retrying."
-              : response.status === 409
-                ? "This request conflicts with an earlier action. Please reload before trying again."
-                : "We could not complete that request. Please try again.",
+        (response.status === 503 &&
+          errorCode.success &&
+          setupMessages[errorCode.data.error.code]) ||
+          (response.status === 410
+            ? "Your session has expired. Start a new session to continue."
+            : response.status === 404
+              ? "This item is unavailable for this session."
+              : response.status === 429
+                ? "Too many requests. Please wait one minute before retrying."
+                : response.status === 409
+                  ? "This request conflicts with an earlier action. Please reload before trying again."
+                  : "We could not complete that request. Please try again."),
       );
     const parsed = schema.safeParse(data);
     if (!parsed.success)

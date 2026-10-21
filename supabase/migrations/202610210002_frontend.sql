@@ -22,7 +22,7 @@ grant all on write_receipts,app_migrations to service_role;
 create or replace function frontend_write(p_session uuid,p_key uuid,p_operation text,p_payload jsonb)
 returns jsonb language plpgsql security invoker set search_path=public as $$
 declare previous write_receipts; response jsonb; result_id uuid; aid uuid;
- c courses; fingerprint text := encode(digest(p_payload::text,'sha256'),'hex');
+ c courses; fingerprint text := encode(sha256(convert_to(p_payload::text,'UTF8')),'hex');
 begin
  if not exists(select 1 from anonymous_sessions where id=p_session and expires_at>now()) then
   raise exception 'expired session' using errcode='P0410'; end if;
