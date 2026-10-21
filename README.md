@@ -1,124 +1,111 @@
-# Career Guidance MVP backend
+# Wayfinder — Career Guidance MVP
 
-API-only Next.js 16.4.2 + TypeScript App Router + Supabase Postgres, suitable for Vercel. The frontend is developed separately. No student UI, login, payments, AI/LLM calls, counselor email/Resend, or booking is included.
+A responsive student-facing career exploration demo in one Next.js App Router + TypeScript project. The complete flow is landing → 20-question quiz → server recommendations → courses/advisors/local exploration → confirmed next action. Work remains on `feature/frontend_alexander`; backend files stay in their existing locations.
 
-The finalized 20-question PDF overrides the older PRD's 10–15 question statement. The complete PRD scope is included: anonymous sessions, quiz/results, courses/interests, advisors/leads, separate sponsored ads, and eight analytics event types. Original product sources are in `docs/source/`. The seed preserves the exact English quiz text/options and normalized context values. Burmese translations in the PDF were not seeded because text extraction damaged their spacing; the original PDF remains available for a reviewed translation pass.
+The English quiz follows the finalized 20-question source. Q15/Q17 allow one or two answers; the other questions require one. Results are exploratory suggestions, not a validated career assessment. Courses, advisors, ads, and exploration activities are explicitly fictional demo content. Advisor requests are stored without sending a message or booking an appointment. Public deployment is deferred.
 
-## Requirements and environment
+## Run locally
 
-Node.js 22+ (tested on 24.19; the installed Supabase client requires Node 22+), npm (lockfile committed), and a Supabase project. Docker Compose is optional for the isolated local integration harness.
-
-```sh
-npm ci --cache /tmp/career-npm-cache
-cp .env.example .env.local
-```
-
-Configure `.env.local` securely:
-
-- `SUPABASE_URL`: project URL from Supabase settings.
-- `SUPABASE_SERVICE_ROLE_KEY`: backend-only service-role key. Never put it in NEXT_PUBLIC variables, frontend code, version control, or chat. This implementation does not need the anon key.
-- `FRONTEND_ORIGIN`: optional exact origin of the separate frontend (for example `http://localhost:3001`). Required when the browser calls this API across origins.
-
-Next.js loads `.env.local`; never commit it. In Vercel, set these in project environment settings and redeploy. The API returns safe configuration errors if database variables are missing. `/api/health` verifies connectivity and six seeded categories; it does not prove the entire application flow by itself.
-
-## Hosted Supabase setup
-
-Create a Supabase project and apply `supabase/migrations/202610210001_initial.sql`, then `supabase/seed.sql`, using Supabase SQL Editor or a trusted PostgreSQL connection. These are complete SQL files, not manual row-entry instructions. For an isolated new project with `psql` installed and an existing secure DATABASE_URL binding:
+Requirements: Node.js 22+ (developed with 24.3), npm, and Docker Desktop running.
 
 ```sh
-psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/migrations/202610210001_initial.sql
-psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/seed.sql
+npm ci
+npm run dev:local
 ```
 
-Apply the migration once; the seed can be rerun and updates its deterministic demo rows. Do not rerun the seed against edited production content without reviewing the updates. Hosted Supabase already supplies anon/authenticated/service_role roles. Do not apply `scripts/local-roles.sql` there. RLS is enabled on all tables, with no browser table access; only the backend service role accesses them. Prefer a fresh project to avoid conflicting table names.
+Open [Wayfinder](http://localhost:3000). [Health](http://localhost:3000/api/health) and [quiz JSON](http://localhost:3000/api/quiz) are available for diagnostics.
+
+`dev:local` starts the isolated PostgreSQL/PostgREST containers, initializes new volumes with migrations and demo seed, upgrades existing volumes with `202610210002_frontend.sql`, applies demo enrichment, starts the REST gateway, and serves the app on port 3000. It uses public local-demo credentials in process memory and always targets the local database, regardless of hosted shell variables or `.env.local`. No Supabase account or environment file is required for this mode.
+
+Ports 3000, 54321, and 54322 must be free. Start only one dev launcher. Ctrl+C stops the app and gateway; `npm run db:stop` stops Docker containers while retaining data. Restart with `npm run dev:local`. Never delete the volume just to apply a migration.
+
+The Docker setup is a local PostgreSQL/PostgREST harness, not a full Supabase installation; it provides no dashboard, Auth, or Storage. Do not expose it publicly.
+
+## Environment and database
+
+The standard `npm run dev` and `npm start` commands use server environment variables:
+
+- `SUPABASE_URL`: Supabase project URL, or `http://127.0.0.1:54321` with the local gateway running.
+- `SUPABASE_SERVICE_ROLE_KEY`: backend-only service-role credential. Never expose it using `NEXT_PUBLIC_*`, browser code, version control, or chat.
+- `FRONTEND_ORIGIN`: optional exact origin for a separate cross-origin API client. The included same-origin frontend does not need it.
+
+Next.js loads `.env.local`, which is Git-ignored. For a manual environment, copy `.env.example` and configure it privately. An existing local `.env.local` may contain the public demo credential; it is not a hosted credential. This project needs no browser Supabase key.
+
+For an existing local volume, `dev:local` applies the additive upgrade without removing records. For manual upgrades:
 
 ```sh
-npm run dev
-# Or production:
-npm run build
-npm start
+docker compose exec -T postgres psql -U postgres -v ON_ERROR_STOP=1 < supabase/migrations/202610210002_frontend.sql
+docker compose exec -T postgres psql -U postgres -v ON_ERROR_STOP=1 < supabase/demo_enrichment.sql
 ```
 
-No root page/UI is provided; `/` returns 404. Use the documented API paths.
+For a future fresh hosted Supabase project, apply these SQL files in order using the SQL Editor or a trusted database connection:
 
-## Isolated local integration harness
+1. `supabase/migrations/202610210001_initial.sql`
+2. `supabase/migrations/202610210002_frontend.sql`
+3. `supabase/seed.sql`
+4. `supabase/demo_enrichment.sql`
 
-This reproduces Supabase's PostgreSQL/PostgREST data path for local tests; it is not a full Supabase installation (no dashboard/auth/storage). It needs no hosted credentials. Never deploy this harness publicly: its private Docker database uses local trust and its local-only JWT signing string is public demo configuration. REST is bound to loopback and its anonymous role has no table privileges.
-
-```sh
-# SQL mounts must be readable by the container's postgres user.
-chmod a+r scripts/local-roles.sql supabase/migrations/202610210001_initial.sql supabase/seed.sql
-docker compose up -d --wait
-node scripts/local-gateway.mjs
-```
-
-In another terminal:
-
-```sh
-# Exports only the public local-demo token generated by this repository.
-eval "$(node scripts/local-env.mjs)"
-npm run build
-npm start
-```
-
-In a third terminal, use the same local exports and run:
-
-```sh
-eval "$(node scripts/local-env.mjs)"
-npm run test:integration
-docker compose exec -T postgres psql -U postgres -v ON_ERROR_STOP=1 < scripts/verify.sql
-```
-
-The gateway maps Supabase's `/rest/v1` path on loopback port 54321 to PostgREST on 54322. The Compose volume persists local records across restarts; initialization SQL runs only for a new volume. To apply a changed schema, use migrations, or deliberately remove **only this disposable local test volume** with `docker compose down -v`, then restart. `docker compose down` stops services while retaining data. Stop the gateway/API using Ctrl-C. These processes must be restarted in a new machine; do not assume Docker volumes or live processes survive environment publication.
+The initial migration runs once; the additive migration and enrichment can be reapplied. Review demo seed updates before rerunning them against edited content. Do not apply `scripts/local-roles.sql` to hosted Supabase, which supplies its own roles. RLS is enabled on every application table; browser roles have no table access. All persistence goes through server-side API handlers.
 
 ## Checks
 
+With the local app running, use another terminal:
+
 ```sh
-npm test                 # focused scoring/validation/recommendation tests
-npm run typecheck        # strict TypeScript
-npm run build            # all route handlers compile in production
-npm run test:integration # running isolated API + database required
+npm test                         # backend and frontend utility tests
+npm run lint                     # TypeScript source lint
+npm run typecheck                # strict TypeScript
+npm run test:integration:local    # original 43-assertion API journey
+npm run test:frontend:integration # concurrency, attempt linkage, details, privacy
+npx playwright install chromium  # once per machine
+npm run test:e2e                  # mobile and desktop browser journeys
 ```
 
-No separate lint tool is configured. The project intentionally uses a small dependency/test setup. Integration tests submit only fictional data, exercise the whole quiz-to-action flow, and verify database writes and all eight event types. They remove their successful-run sessions afterward. Use a disposable development database, never real student data. SQL checks run inside a rolled-back transaction and verify seed counts, RLS privileges, and retention cascades.
+Browser tests cover quiz refresh/back navigation, multi-select, successful actions, empty/failed resources, nonblocking analytics, form failure/consent, session ownership, storage denial, keyboard controls, and horizontal overflow. They use fictional data and remove their test sessions afterward. Screenshots and failure traces go to ignored `test-results/`; traces may contain fictional test contact values. Tests are for this isolated local demo only.
 
-## Frontend integration
+Database verification runs inside a rolled-back transaction:
 
-See [API_CONTRACT.md](API_CONTRACT.md) for every request/response and [SCORING_LOGIC.md](SCORING_LOGIC.md) for exact ranking. Tables and security are documented in [DATABASE_SCHEMA.md](DATABASE_SCHEMA.md). Domain types are in `src/lib/types.ts` and request schemas in `src/lib/validation.ts`.
-
-```ts
-const sessionId = localStorage.getItem('careerSession') ?? crypto.randomUUID();
-localStorage.setItem('careerSession', sessionId);
-const headers = {'Content-Type':'application/json', 'X-Session-ID': sessionId};
-const {questions} = await fetch(`${apiBase}/api/quiz`).then(r => r.json());
-const {attemptId} = await fetch(`${apiBase}/api/quiz/start`, {
-  method:'POST', headers, body:JSON.stringify({})
-}).then(r => r.json());
-// Build answers from all 20 database question/option IDs, respecting maxSelections.
-// POST {attemptId, answers} to /api/quiz/complete; check response.ok before advancing.
+```sh
+docker compose exec -T postgres psql -U postgres -v ON_ERROR_STOP=1 < scripts/verify.sql
 ```
 
-Main flow: quiz → start → complete → owned results → courses/advisors filtered with `?category=I,C` → interest/lead → confirmation. Request `/api/ads?category=I,C` separately and render each placement as Sponsored. Never mix ads into career suggestions. Frontend emits results_viewed/course_clicked/advisor_clicked/explore_clicked; action endpoints emit server success events. Open course links only after interest succeeds. Lead confirmation means storage, not a sent message. Handle 410 by generating a new session UUID and 429 by waiting before retrying. Error responses must not be treated as success.
+Stop the dev server before a production build, so the commands do not share `.next` output:
 
-## Retention and deployment
+```sh
+npm run build
+npm start
+```
 
-Run daily in the Supabase SQL Editor or a privileged scheduled database job:
+With local environment settings, keep the REST gateway and Docker database running for `npm start`.
+
+## Frontend structure and design
+
+- `src/app`: routes, root layout, metadata, shared styles, and existing API handlers.
+- `src/components`: focused interactive screens and shared loading/error primitives.
+- `src/lib/frontend`: runtime wire schemas, typed adapters, API client, anonymous session/storage, quiz drafts, analytics, and local demo activities.
+- `src/lib/service.ts`, `db.ts`, `scoring.ts`, `validation.ts`: server services, persistence, authoritative scoring, and input validation.
+- `supabase`: incremental schema migrations, deterministic seed, and demo content enrichment.
+
+The CSS tokens in `src/app/globals.css` use paper `#faf9f5`, ink `#203d35`, muted text `#68756c`, green `#245b4a`, mint `#e7eee4`, and coral `#efae97`. Components share an 18px radius token, restrained shadows, a spacing scale based on roughly 4px increments, sans-serif text, and Georgia italic accents. Layouts use one column on mobile and focused grids on larger screens. Reduced motion, visible keyboard focus, semantic radio/checkbox controls, and a skip link are included. No external font or illustration network dependency is required.
+
+## Persistence, retries, and analytics
+
+Anonymous session UUIDs and quiz drafts are kept in browser storage, with an in-memory fallback and warning if storage is blocked. Unfinished drafts expire seven days after their last update; incompatible questions/options require a restart. Contact form values stay in page memory and are cleared on confirmed success. Exploration completion is saved only in this browser, not in backend results.
+
+The UI sends persistent `Idempotency-Key` values for starts and action writes. Repeated identical keys reuse the original result and do not duplicate success events; changed payloads conflict. New advisor requests get new keys. Course interest remains unique per session/course: the first write retains its originating attempt and emits `buy_interest` once, even if the student revisits through another attempt. Each accepted request key has a receipt. Quiz completion retains its existing snapshot-based retry behavior.
+
+Results views count once per attempt per browser tab, including reloads and revisits. New tabs can count another view. The view marker is set before sending; analytics failures are not retried and may undercount. Event requests use keepalive for navigation/reload resilience. Course/advisor/explore clicks represent actual interactions; opening a course card and then initiating interest are separate clicks. Client analytics are limited to the existing safe event/metadata allowlist and never include raw answers or contact form values. Successful action events remain server-owned.
+
+## Demo limits and future release
+
+The browser UUID is a pseudonymous bearer identifier, not authentication. Anyone who obtains it can access that session's results. Scoring follows the existing documented rules and is not career science. An in-memory limiter permits 120 requests/minute per apparent IP per process; a trusted proxy and shared limiter are needed before public multi-instance hosting. There is no email delivery, booking, payment, login, admin interface, or public deployment in this scope.
+
+Sessions expire 90 days after creation. Deleting them cascades attempts, action records, events, and write receipts. Individual leads/events also have 90-day expiry. Browser draft cleanup does not replace backend retention. Schedule or manually run the existing privileged cleanup function:
 
 ```sql
 select public.cleanup_expired_data();
 ```
 
-No schedule is installed automatically. Sessions expire after 90 days from creation; deleting expired sessions cascades associated quiz attempts, interests, leads, and events. Individual lead/event expiries are also enforced during cleanup.
+No cleanup schedule is installed automatically. Public hosting, real advisor/provider records, actual contact routing, public-launch consent review, and reviewed Burmese translations remain future work.
 
-For Vercel, import this repository as a Next.js project, set server-side variables and exact FRONTEND_ORIGIN, then deploy with `npm run build`. Apply migration/seed to the chosen Supabase project first. Verify the deployed flow separately; local verification is not deployment verification.
-
-## Demo limitations and decisions
-
-- Raw-score ranking follows the PRD despite unequal category maxima. Percentages are returned for context; this is not a validated career assessment.
-- Every course/advisor/ad is explicitly fictional demo content. Reserved example.com URLs demonstrate the interaction without inventing real providers, qualifications, or pricing claims. Replace them with reviewed content before launch.
-- The anonymous UUID is a bearer identifier, not authentication. Anyone with it can access that session's results. No student contact details are returned by the API or logged by application code.
-- In-memory limits (120 requests/minute per apparent IP per process) are suitable for demos, not reliable across serverless instances. Configure a trusted proxy and shared limiter before public launch.
-- Consent wording, legitimate advisor handling, deletion/retention operations, and real contact routing need product review before collecting real student data.
-- Category filters use RIASEC codes rather than the PRD's illustrative `technology` slug. No existing frontend contracts were present.
-- Results are snapshots. Retakes need a new attempt; identical completion retries do not duplicate events. Course interest is deduplicated by session/course. Repeated advisor lead requests are separate requests.
-- Hosted Supabase credentials and Vercel deployment are user configuration steps; neither is provisioned by this repository.
+See [API_CONTRACT.md](API_CONTRACT.md), [DATABASE_SCHEMA.md](DATABASE_SCHEMA.md), [SCORING_LOGIC.md](SCORING_LOGIC.md), [frontend PRD](docs/source/frontend_prd.md), and [implementation notes](docs/FRONTEND_READINESS.md).
