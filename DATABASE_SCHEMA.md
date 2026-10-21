@@ -1,0 +1,47 @@
+# Database schema
+
+Migration: `supabase/migrations/202610210001_initial.sql`. Seed: `supabase/seed.sql`.
+
+All entity tables use UUID primary keys and creation timestamps (attempts use `started_at`); the score mapping has a composite key and timestamp. Content tables have `is_active`; demo listings have `is_demo`.
+
+| Table | Important fields and relationships |
+| --- | --- |
+| career_categories | Unique code R/I/A/S/E/C, name, description |
+| quiz_questions | Unique position 1–20, exact English text, max_selections 1–2 |
+| quiz_options | FK question_id; text, normalized value; unique question/position and question/value |
+| option_category_scores | Composite PK option_id/category_id, both FKs; score 0–3 |
+| career_roles | FK category_id, title, description; unique category/title |
+| courses | FK category_id; title, summary, provider, price_label, URL, study_option, affordable, flexible |
+| advisors | FK category_id; demo name, specialty, contact, support_types |
+| ads | category_ids UUID array, title, URL, placement_key, is_sponsored always true, optional starts_at/ends_at |
+| anonymous_sessions | Browser-generated UUID, created_at, expires_at (90 days) |
+| quiz_attempts | FK session_id; status started/completed, started_at/completed_at, answers_json/result_json |
+| course_interests | FKs session_id/course_id, unique session/course |
+| advisor_leads | FKs session_id/advisor_id; student_name, email/phone contact_method, contact_value, consent_at, expires_at |
+| analytics_events | FK session_id, optional FK attempt_id, approved event_name, optional entity_id, small metadata object, expires_at |
+
+Ads can reference multiple categories without an extra join table; triggers validate array references on writes and restrict deletion of an ad-referenced category. Content foreign keys otherwise restrict deletion. API validation checks polymorphic analytics entity references against active courses/advisors. Database checks constrain status/completion consistency, quiz positions and cardinality limits, scores, study types, lead field sizes, event names, metadata object type/size, URL scheme prefixes, and ad date order. API URL validation additionally rejects malformed URLs and URL credentials.
+
+Primary/unique keys provide lookup indexes. Additional indexes cover attempts/leads/events by session and session/lead/event expiry. Interest uniqueness begins with session_id. The demo dataset is deliberately small; review additional category FK indexes as inventory grows.
+
+## Access and atomicity
+
+RLS is enabled on all 13 tables. No public access policies exist; table privileges are revoked from `anon` and `authenticated`. Browsers use the Next.js API exclusively. The server-only Supabase service role has table privileges and bypasses RLS; the API validates session ownership before accessing an attempt. Never expose that key or use it in the frontend.
+
+RPCs `start_quiz`, `complete_quiz`, `record_course_interest`, and `record_advisor_lead` atomically write the action and its server-owned event. Only service_role receives execute permission. Completion locks the attempt row; identical retries return the stored result; differing retries conflict. Course interest is unique by session/course, with `buy_interest` recorded once. Advisor leads represent individual requests; repeated successful submissions create additional requests/events. No email or booking occurs.
+
+## Retention
+
+All session-linked foreign keys cascade on session deletion. Expiry is anchored to session creation, not extended on visits. Access to an expired session returns 410 and the frontend should generate a new UUID. Leads and events also have individual 90-day expiry. Run daily as a privileged database operator:
+
+```sql
+select public.cleanup_expired_data();
+```
+
+This removes expired events/leads and sessions, cascading attempts/interests/leads/events. Scheduling is not installed automatically; use a Supabase scheduled job or run manually for the demo. Records may remain physically stored after expiry until cleanup runs. Sessions are pseudonymous bearer identifiers, not authentication; anyone with a session UUID can access its records through the API.
+
+## Seed and verification
+
+Deterministic UUIDs make seeding repeatable. Seed includes 6 categories, exactly 20 questions, 85 options, 48 scoring mappings, 6 roles, 12 courses, 6 advisors, 6 sponsored ads. All courses/advisors/ads are explicitly demo content. `example.com` URLs are reserved mock destinations, not real provider or purchase links; demo advisor addresses do not contact anyone. Replace before public launch.
+
+`scripts/verify.sql` checks counts, scoring separation, RLS/privilege restrictions, and retention cascade in a rolled-back transaction. Run only on an isolated development database. `compose.yaml` supplies local PostgreSQL/PostgREST roles for development; do not apply `scripts/local-roles.sql` to hosted Supabase, which manages its own roles.

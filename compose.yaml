@@ -1,0 +1,32 @@
+# Local validation harness only; not a hosted Supabase replacement.
+# All data is isolated to the career_mvp_local volume. No host database port.
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_HOST_AUTH_METHOD: trust
+    volumes:
+      - career_mvp_local:/var/lib/postgresql/data
+      - ./scripts/local-roles.sql:/docker-entrypoint-initdb.d/00-roles.sql:ro
+      - ./supabase/migrations/202610210001_initial.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+      - ./supabase/seed.sql:/docker-entrypoint-initdb.d/02-seed.sql:ro
+    healthcheck:
+      test: [CMD-SHELL, 'pg_isready -U postgres']
+      interval: 2s
+      timeout: 3s
+      retries: 30
+  rest:
+    image: postgrest/postgrest:v13.0.7
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      PGRST_DB_URI: postgres://postgres@postgres:5432/postgres
+      PGRST_DB_SCHEMAS: public
+      PGRST_DB_ANON_ROLE: anon
+      # Public local-only signing string, NOT a production credential.
+      PGRST_JWT_SECRET: local-demo-only-signing-key-not-for-production-2026
+    ports:
+      - '127.0.0.1:54322:3000'
+volumes:
+  career_mvp_local:
