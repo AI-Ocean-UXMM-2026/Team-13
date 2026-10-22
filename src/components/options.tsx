@@ -1,7 +1,16 @@
 "use client";
 import Link from "next/link";
+import {
+  ArrowLeft,
+  ArrowRight,
+  BookOpen,
+  Check,
+  UserRound,
+  UsersRound,
+} from "lucide-react";
 import { useRef, useState } from "react";
 import { track } from "@/lib/frontend/api";
+import { resourceView } from "@/lib/frontend/resource-view";
 import {
   adsSchema,
   advisorsSchema,
@@ -10,22 +19,16 @@ import {
   resultSchema,
   safeExternalUrl,
 } from "@/lib/frontend/contracts";
-import {
-  DemoBadge,
-  Empty,
-  ErrorState,
-  Loading,
-  PageIntro,
-  useResource,
-} from "./shared";
+import { Empty, ErrorState, Loading, useResource } from "./shared";
+
 function Resources({
   category,
+  title,
   attemptId,
-  roleId,
 }: {
   category: string;
+  title: string;
   attemptId: string;
-  roleId: string;
 }) {
   const cache = useRef(new Map<string, unknown>()).current;
   const courses = useResource(
@@ -40,6 +43,9 @@ function Resources({
   );
   const ads = useResource(`/api/ads?category=${category}`, adsSchema, cache);
   const allFailed = courses.error && advisors.error && ads.error;
+  const placements = Object.entries(ads.data?.placements ?? {}).filter(
+    ([, list]) => list.length > 0,
+  );
   return (
     <>
       {allFailed && (
@@ -57,173 +63,160 @@ function Resources({
           </button>
         </div>
       )}
-      <div className="resource-layout">
-        <div>
-          <section className="resource-section">
-            <div className="section-heading">
-              <h2>Learn something new</h2>
-              <span className="eyebrow">COURSES</span>
-            </div>
-            <p className="muted">
-              A place to start, without committing to a whole path.
-            </p>
-            {courses.error ? (
-              <ErrorState error={courses.error} retry={courses.retry} />
-            ) : !courses.data ? (
-              <Loading label="Finding course options…" />
-            ) : !courses.data.courses.length ? (
-              <Empty>
-                No course options are available for this direction yet.
-              </Empty>
-            ) : (
-              <div className="course-grid">
-                {courses.data.courses.map((c) => (
-                  <article className="resource-card" key={c.id}>
-                    <div className="course-illustration" aria-hidden>
-                      <span>↗</span>
-                      <i />
-                      <i />
-                      <i />
-                    </div>
-                    <div className="resource-card-body">
-                      {c.is_demo && <DemoBadge />}
-                      <p className="provider">{c.provider}</p>
-                      <h3>{c.title}</h3>
-                      <p>{c.summary}</p>
-                      <p className="price-label">{c.price_label}</p>
-                      <Link
-                        className="text-link"
-                        href={`/course/${c.id}?attemptId=${attemptId}`}
-                        onClick={() =>
-                          void track({
-                            eventName: "course_clicked",
-                            attemptId,
-                            entityId: c.id,
-                            metadata: { screen: "options" },
-                          })
-                        }
-                      >
-                        View course <span aria-hidden>↗</span>
-                      </Link>
-                    </div>
-                  </article>
-                ))}
-              </div>
-            )}
-          </section>
-          <section className="resource-section">
-            <div className="section-heading">
-              <h2>Talk it through</h2>
-              <span className="eyebrow">ADVISORS</span>
-            </div>
-            <p className="muted">
-              Example profiles for the demo. Requests are stored without sending
-              a message.
-            </p>
-            {advisors.error ? (
-              <ErrorState error={advisors.error} retry={advisors.retry} />
-            ) : !advisors.data ? (
-              <Loading label="Finding advisor options…" />
-            ) : !advisors.data.advisors.length ? (
-              <Empty>
-                No advisors are available for this direction yet. You can still
-                try a course or activity.
-              </Empty>
-            ) : (
-              advisors.data.advisors.map((a) => (
-                <article className="advisor-card" key={a.id}>
-                  <span className="avatar" aria-hidden>
-                    ◉
-                  </span>
-                  <div>
-                    {a.is_demo && <DemoBadge />}
-                    <h3>{a.name}</h3>
-                    <p>{a.specialty}</p>
-                    <p className="muted">{a.summary}</p>
-                    <Link
-                      className="text-link"
-                      href={`/advisor/${a.id}?attemptId=${attemptId}`}
-                      onClick={() =>
-                        void track({
-                          eventName: "advisor_clicked",
-                          attemptId,
-                          entityId: a.id,
-                          metadata: { screen: "options" },
-                        })
-                      }
-                    >
-                      View advisor <span aria-hidden>↗</span>
-                    </Link>
-                  </div>
-                </article>
-              ))
-            )}
-          </section>
+      <section className="resource-section" aria-labelledby="courses-title">
+        <div className="section-heading">
+          <h2 id="courses-title">Learn something new</h2>
+          <span className="eyebrow">COURSES</span>
         </div>
-        <aside>
-          <section className="explore-card">
-            <span className="big-symbol" aria-hidden>
-              ✳
-            </span>
-            <p className="eyebrow">LEARN BY DOING</p>
-            <h2>
-              Give curiosity
-              <br />a little room.
-            </h2>
-            <p>
-              Try a small activity on your own. Notice what you enjoy before
-              choosing what comes next.
-            </p>
-            <Link
-              className="button primary full"
-              href={`/explore/${roleId}?attemptId=${attemptId}`}
-              onClick={() =>
-                void track({
-                  eventName: "explore_clicked",
-                  attemptId,
-                  metadata: { screen: "options", action: "explore" },
-                })
-              }
-            >
-              Try an activity <span aria-hidden>↗</span>
-            </Link>
-            <p className="fine-print">Free demo activity · No account needed</p>
-          </section>
+        <p className="muted">Courses for {title.toLowerCase()}.</p>
+        {courses.error ? (
+          <ErrorState error={courses.error} retry={courses.retry} />
+        ) : !courses.data ? (
+          <Loading label="Finding course options…" />
+        ) : !courses.data.courses.length ? (
+          <Empty>No course options are available for this direction yet.</Empty>
+        ) : (
+          <div className="course-grid">
+            {courses.data.courses
+              .slice(0, 3)
+              .map(resourceView)
+              .map((c) => (
+                <article className="resource-card" key={c.id}>
+                  <div className="resource-card-top">
+                    <span className="resource-icon" aria-hidden="true">
+                      <BookOpen size={20} />
+                    </span>
+                  </div>
+                  <p className="provider">{c.provider}</p>
+                  <h3>{c.title}</h3>
+                  <p className="resource-summary">{c.summary}</p>
+                  <p className="price-label">{c.price_label}</p>
+                  <Link
+                    className="resource-action"
+                    href={`/course/${c.id}?attemptId=${attemptId}`}
+                    onClick={() =>
+                      void track({
+                        eventName: "course_clicked",
+                        attemptId,
+                        entityId: c.id,
+                        metadata: { screen: "options" },
+                      })
+                    }
+                  >
+                    View course <ArrowRight size={16} aria-hidden="true" />
+                  </Link>
+                </article>
+              ))}
+          </div>
+        )}
+      </section>
+      <section className="resource-section" aria-labelledby="advisors-title">
+        <div className="section-heading">
+          <h2 id="advisors-title">Talk with an advisor</h2>
+          <span className="eyebrow">ADVISORS</span>
+        </div>
+        <p className="muted">
+          Explore these example advisor profiles. Requests are stored without
+          sending a message.
+        </p>
+        {advisors.error ? (
+          <ErrorState error={advisors.error} retry={advisors.retry} />
+        ) : !advisors.data ? (
+          <Loading label="Finding advisor options…" />
+        ) : !advisors.data.advisors.length ? (
+          <Empty>
+            No advisors are available for this direction yet. You can still
+            explore courses or choose another direction.
+          </Empty>
+        ) : (
+          <div className="advisor-grid">
+            {advisors.data.advisors
+              .slice(0, 3)
+              .map(resourceView)
+              .map((a) => (
+                <article className="resource-card" key={a.id}>
+                  <div className="resource-card-top">
+                    <span className="avatar" aria-hidden="true">
+                      <UserRound size={22} />
+                    </span>
+                  </div>
+                  <h3>{a.name}</h3>
+                  <p className="advisor-specialty">{a.specialty}</p>
+                  {a.summary && <p className="resource-summary">{a.summary}</p>}
+                  <Link
+                    className="resource-action"
+                    href={`/advisor/${a.id}?attemptId=${attemptId}`}
+                    onClick={() =>
+                      void track({
+                        eventName: "advisor_clicked",
+                        attemptId,
+                        entityId: a.id,
+                        metadata: { screen: "options" },
+                      })
+                    }
+                  >
+                    View advisor <ArrowRight size={16} aria-hidden="true" />
+                  </Link>
+                </article>
+              ))}
+          </div>
+        )}
+      </section>
+      <section className="community-banner" aria-labelledby="community-title">
+        <span className="resource-icon" aria-hidden="true">
+          <UsersRound size={22} />
+        </span>
+        <div>
+          <h2 id="community-title">Join a community</h2>
+          <p>Community connections aren’t available yet.</p>
+        </div>
+        <span className="coming-soon">Coming soon</span>
+      </section>
+      {(ads.error || !ads.data || placements.length > 0) && (
+        <section
+          className="options-sponsored"
+          aria-labelledby="sponsored-title"
+        >
+          <h2 id="sponsored-title">Sponsored offers</h2>
           {ads.error ? (
             <ErrorState error={ads.error} retry={ads.retry} />
+          ) : !ads.data ? (
+            <Loading label="Finding sponsored offers…" />
           ) : (
-            ads.data &&
-            Object.entries(ads.data.placements).map(
-              ([placement, list]) =>
-                list.length > 0 && (
-                  <section
-                    className="sponsored-placement"
-                    key={placement}
-                    aria-label="Sponsored content"
-                  >
-                    <span className="sponsored-label">Sponsored</span>
-                    {list.map((ad) => (
-                      <article key={ad.id}>
-                        <h3>{ad.title}</h3>
-                        <p>{ad.summary}</p>
+            <div className="sponsored-grid">
+              {placements.map(([placement, list]) => (
+                <section
+                  className="sponsored-placement"
+                  key={placement}
+                  data-placement={placement}
+                  aria-label="Sponsored content"
+                >
+                  {list.map(resourceView).map((ad) => (
+                    <article key={ad.id}>
+                      <span className="sponsored-label">Sponsored</span>
+                      <h3>{ad.title}</h3>
+                      {ad.summary && <p>{ad.summary}</p>}
+                      {ad.provider_name && (
                         <p className="provider">{ad.provider_name}</p>
-                        {ad.is_demo && <DemoBadge />}
-                        {safeExternalUrl(ad.url) && (
-                          <a
-                            className="text-link"
-                            href={safeExternalUrl(ad.url)!}
-                          >
-                            View example offer ↗
-                          </a>
-                        )}
-                      </article>
-                    ))}
-                  </section>
-                ),
-            )
+                      )}
+
+                      {safeExternalUrl(ad.url) && (
+                        <a
+                          className="text-link"
+                          href={safeExternalUrl(ad.url)!}
+                        >
+                          View example offer{" "}
+                          <ArrowRight size={14} aria-hidden="true" />
+                        </a>
+                      )}
+                    </article>
+                  ))}
+                </section>
+              ))}
+            </div>
           )}
-        </aside>
-      </div>
+        </section>
+      )}
     </>
   );
 }
@@ -243,52 +236,61 @@ export default function Options({
   const active =
     directions.find((r) => r.category === selected) ?? directions[0];
   return (
-    <>
+    <div className="options-page">
       <Link className="back-link" href={`/results/${attemptId}`}>
-        ← Back to your directions
+        <ArrowLeft size={15} aria-hidden="true" />
+        Back to your directions
       </Link>
-      <PageIntro
-        eyebrow="03 / EXPLORE"
-        title="One small step. A little more clarity."
-      >
+      <header className="options-intro">
+        <p className="eyebrow">03 / EXPLORE</p>
+        <h1>One small step. A little more clarity.</h1>
         <p>
-          Pick a direction, then choose how you’d like to explore it. You don’t
-          have to decide everything today.
+          Choose a direction to see courses and advisors. You can switch
+          anytime.
         </p>
-      </PageIntro>
+      </header>
       {!active ? (
         <Empty>
           No directions are available. <Link href="/">Start again</Link>.
         </Empty>
       ) : (
         <>
-          <div
-            className="direction-tabs"
-            role="group"
-            aria-label="Choose a recommended direction"
+          <section
+            className="direction-selector"
+            aria-labelledby="direction-title"
           >
-            {directions.map((r) => (
-              <button
-                className={active.id === r.id ? "active" : ""}
-                key={r.id}
-                aria-pressed={active.id === r.id}
-                onClick={() => setSelected(r.category)}
-              >
-                {r.title}
-                <span aria-hidden>↗</span>
-              </button>
-            ))}
-          </div>
-          <p className="selected-hint">
-            {active.suggested_next_step ?? resource.data.result.nextAction.text}
-          </p>
+            <h2 id="direction-title">Choose your career direction</h2>
+            <div
+              className="direction-tabs"
+              role="group"
+              aria-label="Choose a recommended direction"
+            >
+              {directions.map((r) => (
+                <button
+                  className={active.id === r.id ? "active" : ""}
+                  key={r.id}
+                  aria-pressed={active.id === r.id}
+                  onClick={() => setSelected(r.category)}
+                >
+                  {r.title}
+                  <span className="direction-check" aria-hidden="true">
+                    {active.id === r.id && <Check size={16} />}
+                  </span>
+                </button>
+              ))}
+            </div>
+            <p className="selected-hint">
+              {active.suggested_next_step ??
+                resource.data.result.nextAction.text}
+            </p>
+          </section>
           <Resources
             category={active.category}
+            title={active.title}
             attemptId={attemptId}
-            roleId={active.id}
           />
         </>
       )}
-    </>
+    </div>
   );
 }

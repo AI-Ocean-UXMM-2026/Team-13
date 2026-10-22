@@ -1,12 +1,12 @@
 "use client";
 import Link from "next/link";
+import { ArrowRight, Check, Clock, Lightbulb } from "lucide-react";
 import { useEffect, useState } from "react";
 import { activities } from "@/lib/frontend/activities";
 import { resultSchema } from "@/lib/frontend/contracts";
 import { read, save, sessionId } from "@/lib/frontend/storage";
 import {
   Back,
-  DemoBadge,
   Empty,
   ErrorState,
   Loading,
@@ -61,8 +61,10 @@ export default function Explore({
         </p>
       </PageIntro>
       <div className="activity-meta">
-        <DemoBadge />
-        <span>About {activity.minutes} minutes</span>
+        <span>
+          <Clock size={14} aria-hidden="true" />
+          About {activity.minutes} minutes
+        </span>
         <span>At your own pace</span>
       </div>
       <div className="activity-grid">
@@ -79,7 +81,7 @@ export default function Explore({
         </section>
         <aside className="reflection-card">
           <span className="big-symbol" aria-hidden>
-            ✧
+            <Lightbulb size={28} />
           </span>
           <h2>A moment to reflect.</h2>
           <p>You don’t need to write anything here. Just notice:</p>
@@ -102,7 +104,8 @@ export default function Explore({
               backend results.
             </p>
             <Link className="button primary" href={`/options/${attemptId}`}>
-              Explore another next step →
+              Explore another next step{" "}
+              <ArrowRight size={16} aria-hidden="true" />
             </Link>
           </div>
         ) : (
@@ -117,7 +120,7 @@ export default function Explore({
                 setDone(true);
               }}
             >
-              Mark this step complete <span aria-hidden>✓</span>
+              Mark this step complete <Check size={16} aria-hidden="true" />
             </button>
             <p className="fine-print">
               Completion is saved only in this browser.

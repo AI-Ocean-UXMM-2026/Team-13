@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
+import { ArrowLeft, Check, Compass, RotateCcw } from "lucide-react";
 import { z } from "zod";
 import { api, RequestError } from "@/lib/frontend/api";
 import { resetSession, storageUnavailable } from "@/lib/frontend/storage";
@@ -53,24 +54,40 @@ export function Header() {
       ? 1
       : path.startsWith("/results")
         ? 2
-        : path === "/"
-          ? 0
-          : 3;
+        : ["/options/", "/course/", "/advisor/", "/explore/"].some((prefix) =>
+              path.startsWith(prefix),
+            )
+          ? 3
+          : 0;
   return (
     <header className="site-header">
-      <Link href="/" className="brand" aria-label="Wayfinder home">
-        <span className="brand-mark">↗</span>wayfinder
-        <span className="brand-dot">.</span>
-      </Link>
-      <nav aria-label="Your journey" className="journey">
-        {["Discover", "Reflect", "Explore"].map((label, i) => (
-          <span key={label} className={step === i + 1 ? "current" : ""}>
-            <b>{String(i + 1).padStart(2, "0")}</b>
-            {label}
+      <div className="site-header-inner">
+        <Link href="/" className="brand" aria-label="Wayfinder home">
+          <span className="brand-mark">
+            <Compass aria-hidden="true" />
           </span>
-        ))}
-      </nav>
-      <span className="demo-tag">LOCAL DEMO</span>
+          <span>
+            <strong>Wayfinder</strong>
+            <small>Career Discovery</small>
+          </span>
+        </Link>
+        <nav aria-label="Your journey" className="journey">
+          {["Discover", "Reflect", "Explore"].map((label, i) => (
+            <span
+              key={label}
+              className={
+                step === i + 1 ? "current" : step > i + 1 ? "complete" : ""
+              }
+              aria-current={step === i + 1 ? "step" : undefined}
+            >
+              <b>
+                {step > i + 1 ? <Check size={12} aria-hidden="true" /> : i + 1}
+              </b>
+              {label}
+            </span>
+          ))}
+        </nav>
+      </div>
     </header>
   );
 }
@@ -119,6 +136,7 @@ export function ErrorState({
       <div className="actions">
         {retry && (
           <button className="button secondary" onClick={retry}>
+            <RotateCcw size={15} aria-hidden="true" />
             Retry
           </button>
         )}
@@ -139,9 +157,6 @@ export function ErrorState({
       </div>
     </div>
   );
-}
-export function DemoBadge() {
-  return <span className="badge">Demo example</span>;
 }
 export function PageIntro({
   eyebrow,
@@ -166,7 +181,8 @@ export function Back({ attemptId }: { attemptId?: string }) {
       className="back-link"
       href={attemptId ? `/options/${attemptId}` : "/"}
     >
-      ← {attemptId ? "Back to your options" : "Back to start"}
+      <ArrowLeft size={15} aria-hidden="true" />{" "}
+      {attemptId ? "Back to your options" : "Back to start"}
     </Link>
   );
 }

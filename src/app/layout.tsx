@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Compass } from "lucide-react";
 import { Header, StorageNotice } from "@/components/shared";
 import "./globals.css";
 export const metadata: Metadata = {
@@ -24,11 +25,15 @@ export default function RootLayout({
           {children}
         </main>
         <footer className="site-footer">
-          <Link className="brand" href="/">
-            wayfinder.
-          </Link>
-          <p>Small steps. Open possibilities.</p>
-          <span>Local demo · Suggestions, not a final assessment</span>
+          <div className="site-footer-inner">
+            <div className="footer-identity">
+              <Link className="brand" href="/">
+                <Compass size={18} aria-hidden="true" /> Wayfinder
+              </Link>
+              <p>Small steps. Open possibilities.</p>
+            </div>
+            <span>Suggestions, not a final assessment</span>
+          </div>
         </footer>
       </body>
     </html>
