@@ -10,6 +10,7 @@ services:
       - ./scripts/local-roles.sql:/docker-entrypoint-initdb.d/00-roles.sql:ro
       - ./supabase/migrations/202610210001_initial.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
       - ./supabase/migrations/202610210002_frontend.sql:/docker-entrypoint-initdb.d/02-frontend.sql:ro
+      - ./supabase/migrations/202610220001_hosted_compatibility.sql:/docker-entrypoint-initdb.d/02a-hosted-compatibility.sql:ro
       - ./supabase/seed.sql:/docker-entrypoint-initdb.d/03-seed.sql:ro
       - ./supabase/demo_enrichment.sql:/docker-entrypoint-initdb.d/04-enrichment.sql:ro
     healthcheck:

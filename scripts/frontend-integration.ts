@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { createClient } from "@supabase/supabase-js";
 const sid = crypto.randomUUID(),
   other = crypto.randomUUID();
-const base = "http://127.0.0.1:3000";
+const base = process.env.API_BASE_URL ?? "http://127.0.0.1:3000";
 async function request(
   path: string,
   payload?: unknown,

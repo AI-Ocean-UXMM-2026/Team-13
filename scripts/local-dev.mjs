@@ -38,6 +38,7 @@ try {
     "supabase/migrations/202610210001_initial.sql",
     "supabase/seed.sql",
     "supabase/migrations/202610210002_frontend.sql",
+    "supabase/migrations/202610220001_hosted_compatibility.sql",
     "supabase/demo_enrichment.sql",
   ]) {
     const fullPath = new URL(`../${path}`, import.meta.url);
@@ -59,6 +60,7 @@ try {
   if (!stopping) {
     for (const path of [
       "supabase/migrations/202610210002_frontend.sql",
+      "supabase/migrations/202610220001_hosted_compatibility.sql",
       "supabase/demo_enrichment.sql",
     ]) {
       const result = spawnSync(

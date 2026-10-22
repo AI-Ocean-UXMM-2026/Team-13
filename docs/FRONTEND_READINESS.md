@@ -1,5 +1,7 @@
 # Frontend readiness and approved scope
 
+This records the original local-demo scope. For the subsequent 22 October 2026 deployment checks and hosted setup, see [Vercel deployment readiness](VERCEL_DEPLOYMENT.md).
+
 The frontend and approved backend extensions are implemented for the local demo. The user approved the decisions below on 21 October 2026. Verification includes 15 unit tests, 10 Chromium mobile/desktop browser tests, the original 43-assertion API suite, concurrent-write/ownership integration checks, and SQL privacy/retention checks.
 
 ## Project structure

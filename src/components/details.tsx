@@ -215,7 +215,7 @@ export function AdvisorDetail({
           <h2>About this profile</h2>
           <p>
             This is a fictional advisor profile. Submitted requests are stored
-            in the local database. No message is sent, no appointment is booked,
+            in this app's database. No message is sent, no appointment is booked,
             and no response is promised. Use fictional contact details when
             trying it.
           </p>
@@ -321,7 +321,7 @@ export function AdvisorDetail({
                     }
                   />
                   <span>
-                    I agree to store my contact details in the local database.
+                    I agree to store my contact details in this app's database.
                     No message will be sent to an advisor.
                   </span>
                 </label>
