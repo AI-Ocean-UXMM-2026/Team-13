@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { resourceView } from "./resource-view";
 const id = z.uuid();
 export const questionSchema = z.object({
   id,
@@ -74,8 +75,16 @@ export const resultSchema = z.object({
         id,
         code: z.enum(["R", "I", "A", "S", "E", "C"]),
         name: z.string(),
+        score: z.number().nonnegative().optional().catch(undefined),
       }),
     ),
+    profile: z
+      .object({
+        explorationPreference: z.string().optional().catch(undefined),
+        coursePriorities: z.array(z.string()).optional().catch(undefined),
+      })
+      .optional()
+      .catch(undefined),
     explanation: z.string(),
     nextAction: z.object({ text: z.string(), guidance: z.array(z.string()) }),
   }),
@@ -83,7 +92,7 @@ export const resultSchema = z.object({
 export type ResultView = z.infer<typeof resultSchema>["result"];
 export function recommendationViews(result: ResultView) {
   return result.recommendations.map((r) => ({
-    ...r,
+    ...resourceView(r),
     categoryName:
       result.rankedCategories.find((c) => c.id === r.category_id)?.name ??
       r.category,

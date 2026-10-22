@@ -1,9 +1,12 @@
 "use client";
 import Link from "next/link";
+import Image from "next/image";
+import { ArrowLeft, ArrowRight, ShieldCheck } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { api, RequestError } from "@/lib/frontend/api";
 import { quizSchema, resultSchema } from "@/lib/frontend/contracts";
+import { interestMascots } from "@/lib/frontend/interest-mascots";
 import {
   type Draft,
   compatibleDraft,
@@ -16,6 +19,24 @@ import {
   validSelection,
 } from "@/lib/frontend/storage";
 import { ErrorState, Loading, PageIntro, useResource } from "./shared";
+
+function Mascot({ src, size }: { src: string; size: number }) {
+  return (
+    <Image
+      key={src}
+      className="quiz-mascot"
+      src={src}
+      alt=""
+      width={size}
+      height={size}
+      unoptimized
+      onError={(event) => {
+        event.currentTarget.style.visibility = "hidden";
+      }}
+    />
+  );
+}
+
 export default function Quiz() {
   const resource = useResource("/api/quiz", quizSchema);
   const [draft, setDraft] = useState<Draft>();
@@ -76,6 +97,10 @@ export default function Quiz() {
   const questions = resource.data.questions;
   const q = questions[draft.currentQuestionIndex];
   const selected = draft.answers[q.id] ?? [];
+  const mascots = interestMascots(q);
+  const selectedOption = q.options.find((option) =>
+    selected.includes(option.id),
+  );
   function update(patch: Partial<Draft>) {
     const next = { ...draft!, ...patch, updatedAt: Date.now() };
     storeDraft(next);
@@ -152,33 +177,25 @@ export default function Quiz() {
     );
   return (
     <section className="quiz-layout">
-      <aside className="quiz-aside">
-        <Link href="/" className="back-link">
-          ← Back to start
-        </Link>
-        <p className="eyebrow">01 / DISCOVER</p>
-        <h2>
-          Follow your
-          <br />
-          <em>curiosity.</em>
-        </h2>
-        <p>
-          No right or wrong answers. Choose what feels closest to you today.
-        </p>
-        <span className="aside-flower" aria-hidden>
-          ✳
+      <Link href="/" className="back-link">
+        <ArrowLeft size={15} aria-hidden="true" />
+        Back to start
+      </Link>
+      <div className="quiz-heading">
+        <div>
+          <p className="eyebrow">01 / DISCOVER</p>
+          <h2>Follow your curiosity.</h2>
+        </div>
+        <span className="question-count">
+          Question {draft.currentQuestionIndex + 1} <span>of 20</span>
         </span>
-        <p className="fine-print">
-          Your answers stay on this browser for up to seven days after your last
-          update.
-        </p>
-      </aside>
+      </div>
+      <p className="quiz-reassurance">
+        No right or wrong answers. Choose what feels closest to you today.
+      </p>
       <div className="quiz-main">
         <div className="progress-label">
-          <span>
-            Question {draft.currentQuestionIndex + 1}{" "}
-            <span className="muted">of 20</span>
-          </span>
+          <span>Your progress</span>
           <span>
             {Math.round(((draft.currentQuestionIndex + 1) / 20) * 100)}%
           </span>
@@ -196,16 +213,40 @@ export default function Quiz() {
             ? "Choose one or two options."
             : "Choose one option."}
         </p>
-        <fieldset className="answer-list" disabled={busy}>
+        {mascots && (
+          <div className="mascot-preview">
+            {selectedOption && (
+              <Mascot src={mascots.get(selectedOption.id)!} size={112} />
+            )}
+            <p role="status" aria-live="polite" aria-atomic="true">
+              {selectedOption ? (
+                <>
+                  <span className="sr-only">Selected: </span>
+                  {selectedOption.text}
+                </>
+              ) : (
+                "Choose an answer below."
+              )}
+            </p>
+          </div>
+        )}
+        <fieldset
+          className={`answer-list${mascots ? " mascot-answers" : ""}`}
+          disabled={busy}
+        >
           <legend className="sr-only">{q.text}</legend>
           {q.options.map((option, i) => (
             <label
               key={option.id}
               className={`answer-option ${selected.includes(option.id) ? "selected" : ""}`}
             >
-              <span className="option-letter" aria-hidden>
-                {String.fromCharCode(65 + i)}
-              </span>
+              {mascots ? (
+                <Mascot src={mascots.get(option.id)!} size={64} />
+              ) : (
+                <span className="option-letter" aria-hidden>
+                  {String.fromCharCode(65 + i)}
+                </span>
+              )}
               <span>{option.text}</span>
               <input
                 type={q.maxSelections === 1 ? "radio" : "checkbox"}
@@ -237,7 +278,7 @@ export default function Quiz() {
               update({ currentQuestionIndex: draft.currentQuestionIndex - 1 })
             }
           >
-            ← Back
+            <ArrowLeft size={16} aria-hidden="true" /> Back
           </button>
           <button
             className="button primary"
@@ -255,10 +296,15 @@ export default function Quiz() {
               : draft.currentQuestionIndex === 19
                 ? "See my results"
                 : "Next question"}{" "}
-            <span aria-hidden>→</span>
+            <ArrowRight size={16} aria-hidden="true" />
           </button>
         </div>
       </div>
+      <p className="quiz-storage fine-print">
+        <ShieldCheck size={14} aria-hidden="true" />
+        Your answers stay on this browser for up to seven days after your last
+        update.
+      </p>
     </section>
   );
 }

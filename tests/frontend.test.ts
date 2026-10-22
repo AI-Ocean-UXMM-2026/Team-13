@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { z } from "zod";
+import { interestMascots } from "../src/lib/frontend/interest-mascots";
 import { api, RequestError, track } from "../src/lib/frontend/api";
 import {
   DRAFT_LIFETIME,
@@ -44,6 +45,48 @@ const draft: Draft = {
   currentQuestionIndex: 0,
   updatedAt: Date.now(),
 };
+test("mascot matching follows answer identity and rejects incomplete or unrelated scales", () => {
+  const scale: PublicQuestion = {
+    ...question,
+    maxSelections: 1,
+    options: [
+      ["0", "Not interested"],
+      ["1", "A little interested"],
+      ["2", "Interested"],
+      ["3", "Very interested"],
+    ].map(([value, text], position) => ({
+      id: crypto.randomUUID(),
+      position,
+      value,
+      text,
+    })),
+  };
+  const reordered = { ...scale, options: [...scale.options].reverse() };
+  assert.deepEqual(interestMascots(reordered), interestMascots(scale));
+  assert.equal(
+    interestMascots(reordered)?.get(scale.options[2].id),
+    "/mascots/quiz/neutral.svg",
+  );
+  assert.equal(interestMascots({ ...scale, maxSelections: 2 }), undefined);
+  assert.equal(
+    interestMascots({ ...scale, options: scale.options.slice(1) }),
+    undefined,
+  );
+  assert.equal(
+    interestMascots({
+      ...scale,
+      options: scale.options.map((option) => ({ ...option, text: "Other" })),
+    }),
+    undefined,
+  );
+  assert.equal(
+    interestMascots({
+      ...scale,
+      options: scale.options.map((option) => ({ ...option, value: "0" })),
+    }),
+    undefined,
+  );
+});
 test("draft restoration rejects expiry, wrong session, wrong schema, malformed JSON, and changed options", () => {
   assert.deepEqual(parseDraft(JSON.stringify(draft), sid), draft);
   assert.equal(

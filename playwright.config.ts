@@ -6,7 +6,10 @@ export default defineConfig({
   timeout: 60000,
   expect: { timeout: 15000 },
   reporter: "list",
-  use: { baseURL: "http://127.0.0.1:3000", trace: "retain-on-failure" },
+  use: {
+    baseURL: process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000",
+    trace: "retain-on-failure",
+  },
   projects: [
     {
       name: "mobile",

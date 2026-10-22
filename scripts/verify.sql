@@ -5,7 +5,16 @@ do $$ begin
  if (select count(*) from quiz_options where is_active)<>85 then raise exception 'expected 85 options'; end if;
  if (select count(*) from option_category_scores)<>48 then raise exception 'expected 48 mappings'; end if;
  if exists(select 1 from quiz_questions q join quiz_options o on o.question_id=q.id join option_category_scores s on s.option_id=o.id where q.position>12) then raise exception 'context must not score'; end if;
- if (select count(*) from pg_tables where schemaname='public' and rowsecurity)<>15 then raise exception 'expected RLS on all 15 tables'; end if;
+ if exists (
+  select 1 from (values
+   ('career_categories'),('quiz_questions'),('quiz_options'),('option_category_scores'),
+   ('career_roles'),('courses'),('advisors'),('ads'),('anonymous_sessions'),
+   ('quiz_attempts'),('course_interests'),('advisor_leads'),('analytics_events'),
+   ('write_receipts'),('app_migrations')
+  ) required(name)
+  left join pg_tables t on t.schemaname='public' and t.tablename=required.name
+  where not coalesce(t.rowsecurity,false)
+ ) then raise exception 'expected RLS on all 15 application tables'; end if;
  if exists(select 1 from quiz_options o left join option_category_scores s on s.option_id=o.id join quiz_questions q on q.id=o.question_id where q.position<=12 and s.option_id is null) then raise exception 'missing score'; end if;
 end $$;
 -- Prove RLS and table privileges block browser roles.
