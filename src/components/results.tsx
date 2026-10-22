@@ -10,13 +10,29 @@ import {
 } from "lucide-react";
 import { useEffect } from "react";
 import { track } from "@/lib/frontend/api";
-import { recommendationViews, resultSchema } from "@/lib/frontend/contracts";
+import {
+  coursesSchema,
+  recommendationViews,
+  resultSchema,
+} from "@/lib/frontend/contracts";
 import { NOT_RECORDED, resultSummary } from "@/lib/frontend/result-summary";
 import { Empty, ErrorState, Loading, useResource } from "./shared";
+import LearningRoadmap from "./learning-roadmap";
+import InterestAreas from "./interest-areas";
+import ResultMascotHero from "./result-mascot";
 export default function Results({ attemptId }: { attemptId: string }) {
   const { data, error, retry } = useResource(
     `/api/results/${attemptId}`,
     resultSchema,
+  );
+  const categories = [
+    ...new Set(data?.result.recommendations.map((r) => r.category) ?? []),
+  ].join(",");
+  const courses = useResource(
+    categories && !data?.result.areas
+      ? `/api/courses?category=${categories}`
+      : null,
+    coursesSchema,
   );
   useEffect(() => {
     if (data)
@@ -36,6 +52,11 @@ export default function Results({ attemptId }: { attemptId: string }) {
         <p className="eyebrow">02 / REFLECT</p>
         <h1 id="reflect-title">What we found about you</h1>
         <p className="result-explanation">{data.result.explanation}</p>
+        <ResultMascotHero
+          key={attemptId}
+          result={data.result}
+          attemptId={attemptId}
+        />
         <div className="findings-grid">
           <section className="finding-card" aria-labelledby="interests-title">
             <Compass size={21} aria-hidden="true" />
@@ -74,66 +95,83 @@ export default function Results({ attemptId }: { attemptId: string }) {
           </section>
         </div>
       </section>
-      <section className="results-summary" aria-labelledby="directions-title">
-        <div className="directions-intro">
-          <h2 id="directions-title">A few directions to explore.</h2>
-          <p>
-            Your interests can open more than one door. Here are some starting
-            points, with a small step you can try for each.
-          </p>
-        </div>
-        {!cards.length ? (
-          <Empty>
-            No directions are available for this attempt.{" "}
-            <Link href="/">Start a new quiz</Link> or{" "}
-            <button onClick={retry} className="text-link">
-              retry loading
-            </button>
-            .
-          </Empty>
-        ) : (
-          <div className="recommendation-grid">
-            {cards.map((r, i) => (
-              <article className={`recommendation-card tone-${i}`} key={r.id}>
-                <div className="card-top">
-                  <span className="eyebrow">
-                    DIRECTION {String(i + 1).padStart(2, "0")}
-                  </span>
-                  <span className="direction-symbol" aria-hidden>
-                    {i === 0 ? (
-                      <Compass aria-hidden="true" />
-                    ) : i === 1 ? (
-                      <Lightbulb aria-hidden="true" />
-                    ) : (
-                      <Target aria-hidden="true" />
-                    )}
-                  </span>
-                </div>
-                <p className="category-label">{r.categoryName}</p>
-                <h3>{r.title}</h3>
-                <p>{r.description}</p>
-                <div className="why-block">
-                  <h4>Why explore this?</h4>
-                  <p>{r.reason}</p>
-                </div>
-                {r.suggested_next_step && (
-                  <div className="next-step">
-                    <h4>A small first step</h4>
-                    <p>{r.suggested_next_step}</p>
-                  </div>
-                )}
-                <Link
-                  className="button secondary full"
-                  href={`/options/${attemptId}?category=${r.category}`}
-                >
-                  Explore this direction{" "}
-                  <ArrowRight size={16} aria-hidden="true" />
-                </Link>
-              </article>
-            ))}
-          </div>
-        )}
+      {!data.result.areas && (
+        <p className="notice">
+          This saved result uses the earlier scoring rules.{" "}
+          <Link href="/">Retake the quiz</Link> for normalized interest areas
+          and more example careers.
+        </p>
+      )}
+      <section
+        className="next-action-panel"
+        aria-labelledby="next-action-title"
+      >
+        <h2 id="next-action-title">Your next small step</h2>
+        <p>{data.result.nextAction.text}</p>
+        <ul>
+          {data.result.nextAction.guidance.map((line, index) => (
+            <li key={index}>{line}</li>
+          ))}
+        </ul>
       </section>
+      {data.result.areas ? (
+        <InterestAreas areas={data.result.areas} attemptId={attemptId} />
+      ) : (
+        <section className="results-summary" aria-labelledby="directions-title">
+          <div className="directions-intro">
+            <h2 id="directions-title">A few directions to explore.</h2>
+            <p>
+              Your interests can open more than one door. Here are some starting
+              points, with a small step you can try for each.
+            </p>
+          </div>
+          {!cards.length ? (
+            <Empty>
+              No directions are available for this attempt.{" "}
+              <Link href="/">Start a new quiz</Link> or{" "}
+              <button onClick={retry} className="text-link">
+                retry loading
+              </button>
+              .
+            </Empty>
+          ) : (
+            <div className="recommendation-grid">
+              {cards.map((r, i) => (
+                <article className={`recommendation-card tone-${i}`} key={r.id}>
+                  <div className="card-top">
+                    <span className="eyebrow">
+                      DIRECTION {String(i + 1).padStart(2, "0")}
+                    </span>
+                    <span className="direction-symbol" aria-hidden>
+                      {i === 0 ? (
+                        <Compass aria-hidden="true" />
+                      ) : i === 1 ? (
+                        <Lightbulb aria-hidden="true" />
+                      ) : (
+                        <Target aria-hidden="true" />
+                      )}
+                    </span>
+                  </div>
+                  <p className="category-label">{r.categoryName}</p>
+                  <h3>{r.title}</h3>
+                  <p>{r.description}</p>
+                  <div className="why-block">
+                    <h4>Why explore this?</h4>
+                    <p>{r.reason}</p>
+                  </div>
+                  <LearningRoadmap
+                    role={r}
+                    attemptId={attemptId}
+                    courses={courses.data?.courses}
+                    error={courses.error}
+                    retry={courses.retry}
+                  />
+                </article>
+              ))}
+            </div>
+          )}
+        </section>
+      )}
       <div className="reassurance">
         <Sparkles size={22} aria-hidden="true" />
         <p>
@@ -142,7 +180,7 @@ export default function Results({ attemptId }: { attemptId: string }) {
         </p>
       </div>
       <div className="result-actions">
-        {cards.length > 0 && (
+        {(cards.length > 0 || data.result.areas) && (
           <Link className="button primary" href={`/options/${attemptId}`}>
             Choose a next step <ArrowRight size={16} aria-hidden="true" />
           </Link>

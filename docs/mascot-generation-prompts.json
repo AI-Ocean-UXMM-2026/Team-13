@@ -1,0 +1,62 @@
+{
+  "tool": "Built-in image_gen",
+  "transparent_background": true,
+  "prompts": [
+    {
+      "id": "chinthe",
+      "prompt": "Use case: illustration-story. Asset type: original Wayfinder career-exploration mascot sticker for young adults in Myanmar. Create exactly ONE full-body character centered on a genuinely transparent square canvas, with generous clear padding around the entire silhouette. Cohesive collectible 2D sticker style: confident dark forest-green outlines, round expressive eyes, warm friendly face, compact rounded proportions, crisp clean shapes, subtle soft cel shading, restrained ornamental gold accents, thin cream sticker outline. Polished youth-oriented illustration, not infantile, not photorealistic or 3D. Recognizably Myanmar-inspired creature anatomy and decorative details, respectfully adapted as an original friendly fictional mascot. No lettering, words, numbers, logos, watermark, scenery, floor, background, border frame, extra characters, Buddha figures, flags or weapons. Full body and learning prop must be visible. Avoid a generic Western dragon or generic anime character.\nSubject: Chinthe, the Myanmar temple guardian lion, interpreted as a warm confident hands-on builder. A seated cream-and-jade lion with sturdy paws, elegant curling traditional lion mane and brows, small pointed ears and gold ornamental collar; small teal toolkit beside a front paw and one simple tool held gently. A lion silhouette, no wings, no elephant trunk."
+    },
+    {
+      "id": "naga",
+      "prompt": "Use case: illustration-story. Asset type: original Wayfinder career-exploration mascot sticker for young adults in Myanmar. Create exactly ONE full-body character centered on a genuinely transparent square canvas, with generous clear padding around the entire silhouette. Cohesive collectible 2D sticker style: confident dark forest-green outlines, round expressive eyes, warm friendly face, compact rounded proportions, crisp clean shapes, subtle soft cel shading, restrained ornamental gold accents, thin cream sticker outline. Polished youth-oriented illustration, not infantile, not photorealistic or 3D. Recognizably Myanmar-inspired creature anatomy and decorative details, respectfully adapted as an original friendly fictional mascot. No lettering, words, numbers, logos, watermark, scenery, floor, background, border frame, extra characters, Buddha figures, flags or weapons. Full body and learning prop must be visible. Avoid a generic Western dragon or generic anime character.\nSubject: Naga, the mythical serpent in Myanmar visual traditions, interpreted as a curious investigator. A friendly turquoise-blue coiled serpent with one head, smooth long curved neck, distinctive small ornamental gold head crest and gold collar, expressive eyes. Holds a small magnifying glass delicately in a curl of its tail, looking curiously through it. Serpentine body with no arms or legs and no wings, not a Western dragon."
+    },
+    {
+      "id": "karaweik",
+      "prompt": "Use case: illustration-story. Asset type: original Wayfinder career-exploration mascot sticker for young adults in Myanmar. Create exactly ONE full-body animal character: Karaweik, a graceful Myanmar-inspired mythical bird, as 'The Creative Storyteller'. Fully avian anatomy: rounded bird head, clear golden bird beak, expressive bird eyes, feathered neck, bird torso, two feathered wings, decorative long curled coral-and-jade tail feathers, and two visible bird feet. No human face, no human skin, no human torso, no arms or hands, no human hair. It gently supports a small open sketchbook under a wing, with abstract color marks on the pages and no lettering. Friendly confident smile in the beak. Warm coral plumage, jade wing accents, cream belly, restrained ornamental gold head crest and collar. Cohesive collectible 2D sticker style matching a set of Myanmar animal companions: dark forest-green outlines, round expressive eyes, compact rounded proportions, crisp shapes, soft cel shading, thin cream sticker outline. Polished illustration, not 3D or photorealistic. Genuine transparent square canvas with clear padding; entire bird and book fully visible. No words, letters, numbers, logo, watermark, backdrop, floor or extra characters. This is an original animal interpretation inspired by the Karaweik bird, not Kinnari or a human-bird hybrid."
+    },
+    {
+      "id": "hintha",
+      "prompt": "Use case: illustration-story. Asset type: original Wayfinder career-exploration mascot sticker for young adults in Myanmar. Create exactly ONE full-body character centered on a genuinely transparent square canvas, with generous clear padding around the entire silhouette. Cohesive collectible 2D sticker style: confident dark forest-green outlines, round expressive eyes, warm friendly face, compact rounded proportions, crisp clean shapes, subtle soft cel shading, restrained ornamental gold accents, thin cream sticker outline. Polished youth-oriented illustration, not infantile, not photorealistic or 3D. Recognizably Myanmar-inspired creature anatomy and decorative details, respectfully adapted as an original friendly fictional mascot. No lettering, words, numbers, logos, watermark, scenery, floor, background, border frame, extra characters, Buddha figures, flags or weapons. Full body and learning prop must be visible. Avoid a generic Western dragon or generic anime character.\nSubject: Hintha, the graceful goose-like mythical bird in Myanmar art, interpreted as a caring connector. A warm lilac-and-cream rounded water bird with a gracefully curved neck, modest gold crest and ornamental collar, clearly visible webbed feet, short broad beak, elegant curled tail feathers. Holds an open blue book under one wing extended invitingly as if ready to share it with a friend. Exactly one character, no other birds."
+    },
+    {
+      "id": "galon",
+      "prompt": "Use case: illustration-story. Asset type: original Wayfinder career-exploration mascot sticker for young adults in Myanmar. Create exactly ONE full-body character centered on a genuinely transparent square canvas, with generous clear padding around the entire silhouette. Cohesive collectible 2D sticker style: confident dark forest-green outlines, round expressive eyes, warm friendly face, compact rounded proportions, crisp clean shapes, subtle soft cel shading, restrained ornamental gold accents, thin cream sticker outline. Polished youth-oriented illustration, not infantile, not photorealistic or 3D. Recognizably Myanmar-inspired creature anatomy and decorative details, respectfully adapted as an original friendly fictional mascot. No lettering, words, numbers, logos, watermark, scenery, floor, background, border frame, extra characters, Buddha figures, flags or weapons. Full body and learning prop must be visible. Avoid a generic Western dragon or generic anime character.\nSubject: Galon, Myanmar's Garuda-like mythical bird-human character, interpreted as a bold initiator. A friendly rounded bird face with a clear golden curved beak and expressive eyes, warm amber-gold plumage, teal feathered wings, upright small humanoid body in modest Myanmar-inspired ornamental clothing and small gold head ornament, visible bird feet. Holds a round simple compass without lettering, with a coral pointer, standing in an eager confident pose. Not a human face, no weapons."
+    },
+    {
+      "id": "pyinsayupa",
+      "prompt": "Use case: illustration-story. Asset type: original Wayfinder career-exploration mascot sticker for young adults in Myanmar. Create exactly ONE full-body character centered on a genuinely transparent square canvas, with generous clear padding around the entire silhouette. Cohesive collectible 2D sticker style: confident dark forest-green outlines, round expressive eyes, warm friendly face, compact rounded proportions, crisp clean shapes, subtle soft cel shading, restrained ornamental gold accents, thin cream sticker outline. Polished youth-oriented illustration, not infantile, not photorealistic or 3D. Recognizably Myanmar-inspired creature anatomy and decorative details, respectfully adapted as an original friendly fictional mascot. No lettering, words, numbers, logos, watermark, scenery, floor, background, border frame, extra characters, Buddha figures, flags or weapons. Full body and learning prop must be visible. Avoid a generic Western dragon or generic anime character.\nSubject: Pyinsayupa, the composite mythical creature represented in Myanmar traditional art and musical decoration, interpreted as a thoughtful organizer. A single harmonious cute composite animal with a little elephant trunk and tiny tusks, gentle deer antlers and deer-like front feet, a smoothly curved serpentine body, small blue-green feathered wings and a curled fish tail. Warm mint-teal palette, cream belly, restrained gold collar and antler accents. Holds a small planning notebook with neat blank tab shapes between its front feet. Friendly intelligent expression; every creature part integrates into ONE compact character, not multiple animals."
+    }
+  ],
+  "sourceFiles": [
+    {
+      "id": "chinthe",
+      "file": "exec-20847ac0-6020-4de5-b638-413560e814a9.png"
+    },
+    {
+      "id": "naga",
+      "file": "exec-8198cc92-5880-4221-81a2-b3158f07858b.png"
+    },
+    {
+      "id": "karaweik",
+      "file": "exec-1ac78513-e9f5-4f88-bab1-12ae5323dfc0.png"
+    },
+    {
+      "id": "hintha",
+      "file": "exec-a09fd654-8885-4961-b5b2-75d085cc08a0.png"
+    },
+    {
+      "id": "galon",
+      "file": "exec-3a829f9c-4ba7-4a54-830a-61da1c026767.png"
+    },
+    {
+      "id": "pyinsayupa",
+      "file": "exec-76429640-fd08-433b-ac98-6abf944a8783.png"
+    }
+  ],
+  "superseded": [
+    {
+      "id": "kinnari",
+      "prompt": "Use case: illustration-story. Asset type: original Wayfinder career-exploration mascot sticker for young adults in Myanmar. Create exactly ONE full-body character centered on a genuinely transparent square canvas, with generous clear padding around the entire silhouette. Cohesive collectible 2D sticker style: confident dark forest-green outlines, round expressive eyes, warm friendly face, compact rounded proportions, crisp clean shapes, subtle soft cel shading, restrained ornamental gold accents, thin cream sticker outline. Polished youth-oriented illustration, not infantile, not photorealistic or 3D. Recognizably Myanmar-inspired creature anatomy and decorative details, respectfully adapted as an original friendly fictional mascot. No lettering, words, numbers, logos, watermark, scenery, floor, background, border frame, extra characters, Buddha figures, flags or weapons. Full body and learning prop must be visible. Avoid a generic Western dragon or generic anime character.\nSubject: Kinnari, a mythical female human-bird character familiar in Myanmar and Shan dance traditions, interpreted as a creative storyteller. A friendly young-adult human face and upper torso, modest coral traditional-inspired blouse and gold head ornament, rounded bird lower body, decorative coral and jade feathered tail, clearly visible bird feet and feathered wings. Holds an open small sketchbook with blank abstract color marks. Graceful standing pose; rounded cute sticker proportions; modest fully clothed design."
+    }
+  ]
+}

@@ -37,9 +37,9 @@ export async function requireFrontendSchema() {
   const result = await db()
     .from("app_migrations")
     .select("version", { head: true, count: "exact" })
-    .eq("version", "202610210002");
+    .in("version", ["202610210002", "202610230001"]);
   if (result.error) throw databaseFailure(result.error.code, result.status);
-  if (result.count !== 1)
+  if (result.count !== 2)
     throw new ApiError(
       503,
       "SCHEMA_NOT_READY",

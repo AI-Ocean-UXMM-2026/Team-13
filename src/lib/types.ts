@@ -28,7 +28,14 @@ export interface Answer {
   questionId: string;
   optionIds: string[];
 }
+export interface Activity {
+  title: string;
+  minutes: number;
+  steps: string[];
+}
 export interface Role {
+  display_order?: number;
+  activity?: Activity | null;
   suggested_next_step?: string | null;
   id: string;
   category_id: string;
@@ -90,7 +97,20 @@ export interface Profile {
   desiredSupport: string;
   nextAction: string;
 }
+export type PublicAdvisor = Omit<Advisor, "contact">;
+export interface InterestArea extends Category {
+  score: number;
+  maxScore: number;
+  percentage: number;
+  recommended: boolean;
+  reason: string;
+  careers: Result["recommendations"];
+  courses: Course[];
+  advisors: PublicAdvisor[];
+}
 export interface Result {
+  areas: InterestArea[];
+  recommendationMode: "recommended" | "browse";
   profileLabel: string;
   riasec: Record<Code, number>;
   maxima: Record<Code, number>;
@@ -107,7 +127,7 @@ export interface Result {
   })[];
   profile: Profile;
   courses: Course[];
-  advisors: Advisor[];
+  advisors: PublicAdvisor[];
   explanation: string;
   nextAction: {
     code: string;

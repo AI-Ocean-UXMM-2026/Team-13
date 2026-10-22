@@ -52,3 +52,7 @@ This removes expired events/leads and sessions, cascading attempts/interests/lea
 Deterministic UUIDs make seeding repeatable. Seed includes 6 categories, exactly 20 questions, 85 options, 48 scoring mappings, 6 roles, 12 courses, 6 advisors, 6 sponsored ads. All courses/advisors/ads are explicitly demo content. `example.com` URLs are reserved mock destinations, not real provider or purchase links; demo advisor addresses do not contact anyone. Replace before public launch.
 
 `scripts/verify.sql` checks counts, scoring separation, RLS/privilege restrictions, and retention cascade in a rolled-back transaction. Run only on an isolated development database. `compose.yaml` supplies local PostgreSQL/PostgREST roles for development; do not apply `scripts/local-roles.sql` to hosted Supabase, which manages its own roles.
+
+## Interest-area extension
+
+After the hosted compatibility migration, apply `202610230001_interest_areas.sql`. It adds `career_roles.display_order` and nullable JSON `activity` (title, minutes, steps), updates the write RPC to accept demo courses with no URL, and records its readiness marker. `supabase/career_examples.sql` supplies 18 example careers, preserving original IDs and real records, and clears fictional course URLs. Saved quiz snapshots are not rewritten.

@@ -15,6 +15,7 @@ import {
   type Draft,
   type EntryReason,
   loadDraft,
+  read,
   save,
   sessionId,
   startKey,
@@ -24,11 +25,23 @@ import { ErrorState } from "./shared";
 export default function Landing() {
   const [reason, setReason] = useState<EntryReason>();
   const [draft, setDraft] = useState<Draft | null>(null);
+  const [latest, setLatest] = useState<string>();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<Error>();
   const lock = useRef(false);
   const router = useRouter();
-  useEffect(() => setDraft(loadDraft()), []);
+  useEffect(() => {
+    setDraft(loadDraft());
+    try {
+      const saved = JSON.parse(read("career.completed") ?? "null");
+      if (
+        saved?.sessionId === sessionId() &&
+        typeof saved.attemptId === "string" &&
+        /^[0-9a-f-]{36}$/i.test(saved.attemptId)
+      )
+        setLatest(saved.attemptId);
+    } catch {}
+  }, []);
   async function start() {
     if (!reason || lock.current) return;
     if (
@@ -101,12 +114,12 @@ export default function Landing() {
               {
                 Icon: Compass,
                 title: "Reflect",
-                text: "Meet up to three career directions and understand why they appeared.",
+                text: "Explore your interest areas and several example careers within each.",
               },
               {
                 Icon: ArrowRight,
                 title: "Explore",
-                text: "Find a course or advisor to help you take your next step.",
+                text: "Try a useful activity and explore fictional course and advisor examples.",
               },
             ].map(({ Icon, title, text }, i) => (
               <article key={title}>
@@ -190,6 +203,13 @@ export default function Landing() {
             A starting point for exploration. Never a final career judgment.
           </p>
         </div>
+        {latest && (
+          <p className="resume-note">
+            <Link href={`/results/${latest}`}>
+              Return to my latest results →
+            </Link>
+          </p>
+        )}
         {draft && (
           <p className="resume-note">
             Your unfinished quiz is here.{" "}

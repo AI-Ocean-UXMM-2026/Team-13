@@ -24,7 +24,7 @@ if (!url || !key) {
     ["quiz_attempts", "entry_reason"],
     ["course_interests", "attempt_id"],
     ["advisor_leads", "attempt_id"],
-    ["career_roles", "suggested_next_step"],
+    ["career_roles", "suggested_next_step,display_order,activity"],
     ["advisors", "summary"],
     ["ads", "summary,provider_name"],
     ["write_receipts", "session_id"],
@@ -39,13 +39,13 @@ if (!url || !key) {
         .limit(0);
       if (count !== undefined) query = query.eq("is_active", true);
       if (table === "app_migrations")
-        query = query.eq("version", "202610210002");
+        query = query.in("version", ["202610210002", "202610230001"]);
       const result = await query;
       if (result.error) {
         failures++;
         return `FAIL ${table} (${result.status === 0 ? "network unavailable" : result.status === 401 || result.status === 403 ? "access denied" : result.error.code || "query failed"})`;
       }
-      if (table === "app_migrations" && result.count !== 1) {
+      if (table === "app_migrations" && result.count !== 2) {
         failures++;
         return "FAIL frontend migration version marker is missing";
       }
@@ -86,7 +86,7 @@ if (!url || !key) {
   if (failures) {
     console.log("\nDatabase is not ready. No data or schema was changed.");
     console.log(
-      "For missing frontend fields/functions: review and apply supabase/migrations/202610210002_frontend.sql, then supabase/demo_enrichment.sql.",
+      "For missing frontend fields/functions: review and apply supabase/migrations/202610210002_frontend.sql, the hosted compatibility and interest-area migrations, then the demo enrichment and career example SQL files.",
     );
     console.log(
       "For connection/access failures: check the network and server environment privately.",

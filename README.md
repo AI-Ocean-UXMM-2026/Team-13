@@ -15,7 +15,7 @@ npm run dev:local
 
 Open [Wayfinder](http://localhost:3000). [Health](http://localhost:3000/api/health) and [quiz JSON](http://localhost:3000/api/quiz) are available for diagnostics.
 
-`dev:local` starts the isolated PostgreSQL/PostgREST containers, initializes new volumes with migrations and demo seed, upgrades existing volumes with the frontend and hosted-compatibility migrations, applies demo enrichment, starts the REST gateway, and serves the app on port 3000. It uses public local-demo credentials in process memory and always targets the local database, regardless of hosted shell variables or `.env.local`. No Supabase account or environment file is required for this mode.
+`dev:local` starts the isolated PostgreSQL/PostgREST containers, initializes new volumes with migrations and demo seed, upgrades existing volumes with the frontend and hosted-compatibility migrations, applies demo enrichment and the interest-area migration plus 18 career examples, starts the REST gateway, and serves the app on port 3000. It uses public local-demo credentials in process memory and always targets the local database, regardless of hosted shell variables or `.env.local`. No Supabase account or environment file is required for this mode.
 
 Ports 3000, 54321, and 54322 must be free. Start only one dev launcher. Ctrl+C stops the app and gateway; `npm run db:stop` stops Docker containers while retaining data. Restart with `npm run dev:local`. Never delete the volume just to apply a migration.
 
@@ -37,6 +37,8 @@ For an existing local volume, `dev:local` applies the additive upgrade without r
 docker compose exec -T postgres psql -U postgres -v ON_ERROR_STOP=1 < supabase/migrations/202610210002_frontend.sql
 docker compose exec -T postgres psql -U postgres -v ON_ERROR_STOP=1 < supabase/migrations/202610220001_hosted_compatibility.sql
 docker compose exec -T postgres psql -U postgres -v ON_ERROR_STOP=1 < supabase/demo_enrichment.sql
+docker compose exec -T postgres psql -U postgres -v ON_ERROR_STOP=1 < supabase/migrations/202610230001_interest_areas.sql
+docker compose exec -T postgres psql -U postgres -v ON_ERROR_STOP=1 < supabase/career_examples.sql
 ```
 
 Hosted database changes are currently on hold. The [Supabase migration safety review](docs/SUPABASE_MIGRATION_REVIEW.md) supersedes the earlier recommendation to apply the compatibility migration: current remote `work` already uses native SHA-256, and the running database has not been shown to need that patch. Inspect the deployed revision and installed function through the report's read-only steps before planning any hosted schema change. Do not run local verification SQL, seeds, or migration commands against the working hosted database as part of this review.
@@ -78,6 +80,10 @@ With local environment settings, keep the REST gateway and Docker database runni
 
 ## Frontend structure and design
 
+Reflect career cards include a playful learning roadmap with an existing beginner activity, related course stops, and a link to explore the direction further. Students can open any stop freely; the roadmap does not track course completion. See [Reflect learning roadmaps](docs/REFLECT_ROADMAP.md) for behavior, verification, and preview release status.
+
+Reflect also offers six Myanmar-inspired result companions, with choices for tied or neutral results, bilingual character names, downloadable PNG cards, and native file sharing where supported. See [Result companions](docs/RESULT_MASCOTS.md) for matching, artwork sources, privacy, and `npm run mascots:render` instructions.
+
 - `src/app`: routes, root layout, metadata, shared styles, and existing API handlers.
 - `src/components`: focused interactive screens and shared loading/error primitives.
 - `src/lib/frontend`: runtime wire schemas, typed adapters, API client, anonymous session/storage, quiz drafts, analytics, and local demo activities.
@@ -115,3 +121,7 @@ On `codex/debug-database-connection`, run `npm run db:check` to inspect the conf
 The hosted database inspected during this investigation has the base 20-question quiz, but is missing the frontend migration: entry_reason/attempt_id/content columns, write_receipts, app_migrations, and frontend_write. Review and apply `supabase/migrations/202610210002_frontend.sql`, then `supabase/demo_enrichment.sql` through an authorized SQL connection. Do not rerun the original migration or reset the database. This debug branch does not modify the hosted database automatically or bypass retry protection.
 
 Health now checks the frontend migration marker as well as the seeded categories. Missing setup returns `503 SCHEMA_NOT_READY`; the UI shows an actionable setup message. Start/interest/lead routes check readiness before creating anonymous sessions or invoking action writes. Network and credential failures are distinguished from missing schema without exposing raw database errors.
+
+## Interest-area MVP
+
+The current implementation uses normalized interest areas, 18 example careers with activities, and explicitly fictional courses/advisors. See [the implementation notes](docs/INTEREST_AREAS.md) for behavior, backward compatibility, and the separately approved hosted release procedure. Earlier investigation notes above describe the database at inspection time, not a live readiness guarantee.

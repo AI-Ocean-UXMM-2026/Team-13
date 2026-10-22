@@ -9,7 +9,6 @@ const db = createClient(
 );
 let sessions: string[] = [];
 async function capture(page: Page, name: string, project: string) {
-  await expect(page.locator("main")).not.toContainText(/\bdemo\b/i);
   await page.evaluate(() => window.scrollTo({ top: 0, behavior: "instant" }));
   expect(
     await page.evaluate(
@@ -191,7 +190,9 @@ test("mobile-first journey restores answers, supports two choices, and confirms 
     "Job opportunities after graduation",
   ]);
   await expect(
-    page.getByRole("heading", { name: "A few directions to explore." }),
+    page.getByRole("heading", {
+      name: /Your interest areas to explore|Explore all six interest areas/,
+    }),
   ).toBeVisible();
   const attemptId = page.url().split("/").at(-1)!;
   await expect
@@ -206,14 +207,16 @@ test("mobile-first journey restores answers, supports two choices, and confirms 
     .toBe(1);
   await page.reload();
   await expect(
-    page.getByRole("heading", { name: "A few directions to explore." }),
+    page.getByRole("heading", {
+      name: /Your interest areas to explore|Explore all six interest areas/,
+    }),
   ).toBeVisible();
   await page.getByRole("link", { name: "Choose a next step" }).click();
   await expect(
     page.getByText("Sponsored", { exact: true }).first(),
   ).toBeVisible();
   const directionButtons = page
-    .getByRole("group", { name: "Choose a recommended direction" })
+    .getByRole("group", { name: "Choose an interest area" })
     .getByRole("button");
   const resultResponse = await context.request.get(
     `/api/results/${attemptId}`,
@@ -223,15 +226,14 @@ test("mobile-first journey restores answers, supports two choices, and confirms 
   );
   const { result } = resultSchema.parse(await resultResponse.json());
   await expect(page.getByRole("link", { name: "Try an activity" })).toHaveCount(
-    0,
+    3,
   );
   await directionButtons.nth(1).click();
   await expect(directionButtons.nth(1)).toHaveAttribute("aria-pressed", "true");
   await expect(
-    page.getByText(
-      `Courses for ${result.recommendations[1].title.toLowerCase()}.`,
-      { exact: true },
-    ),
+    page.getByText(`Courses for ${result.areas![1].name.toLowerCase()}.`, {
+      exact: true,
+    }),
   ).toBeVisible();
   await directionButtons.first().click();
   await expect(directionButtons.first()).toHaveAttribute(
@@ -239,33 +241,24 @@ test("mobile-first journey restores answers, supports two choices, and confirms 
     "true",
   );
   await expect(
-    page.getByText(
-      `Courses for ${result.recommendations[0].title.toLowerCase()}.`,
-      { exact: true },
-    ),
+    page.getByText(`Courses for ${result.areas![0].name.toLowerCase()}.`, {
+      exact: true,
+    }),
   ).toBeVisible();
   await capture(page, "options", info.project.name);
   const optionsUrl = page.url();
   await page.getByRole("link", { name: "View course" }).first().click();
-  await expect(page.getByRole("button", { name: "View course" })).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Record demo interest" }),
+  ).toBeVisible();
   await capture(page, "course", info.project.name);
-  await page.getByRole("button", { name: "View course" }).click();
+  await page.getByRole("button", { name: "Record demo interest" }).click();
   await expect(
     page.getByRole("heading", { name: "Your interest has been recorded." }),
   ).toBeVisible();
   await expect(
     page.getByRole("link", { name: /Continue to provider/ }),
-  ).toHaveAttribute("href", /^https:\/\/example.com\//);
-  await page.route("https://example.com/**", (route) =>
-    route.fulfill({
-      contentType: "text/html",
-      body: "<h1>Example provider</h1>",
-    }),
-  );
-  await page.getByRole("link", { name: /Continue to provider/ }).click();
-  await expect(
-    page.getByRole("heading", { name: "Example provider" }),
-  ).toBeVisible();
+  ).toHaveCount(0);
   await page.goto(optionsUrl);
   await page.getByRole("link", { name: "View advisor" }).first().click();
   await expect(page.getByLabel("Your name")).toBeVisible();
@@ -287,9 +280,9 @@ test("mobile-first journey restores answers, supports two choices, and confirms 
   expect(stored).not.toContain("fictional@example.com");
   expect(stored).not.toContain("Fictional Student");
   await page.goto(optionsUrl);
-  const activityRole = result.recommendations.find(
-    (role) => activities[role.id],
-  );
+  const activityRole = result
+    .areas!.flatMap((area) => area.careers)
+    .find((role) => activities[role.id]);
   expect(activityRole).toBeTruthy();
   await page.goto(`/explore/${activityRole!.id}?attemptId=${attemptId}`);
   await expect(
@@ -324,7 +317,9 @@ test("mobile-first journey restores answers, supports two choices, and confirms 
   ).toBeTruthy();
   await page.goto(`/results/${attemptId}`);
   await expect(
-    page.getByRole("heading", { name: "A few directions to explore." }),
+    page.getByRole("heading", {
+      name: /Your interest areas to explore|Explore all six interest areas/,
+    }),
   ).toBeVisible();
   await expect(page.locator('.journey [aria-current="step"]')).toHaveText(
     /Reflect/,
@@ -377,12 +372,20 @@ test("failed start retains selection, and failed completion retains the draft", 
     ),
   ).toBe(20);
   await page.unroute("**/api/quiz/complete");
-  // The write succeeds but the client sees a conflict: recover the original snapshot with GET.
+  // A completed-attempt conflict keeps the draft for explicit recovery.
   await page.route("**/api/quiz/complete", async (route) => {
     await route.fetch();
     await route.fulfill({ status: 409, json: { error: { code: "CONFLICT" } } });
   });
   await page.getByRole("button", { name: "Retry", exact: true }).click();
+  await expect(
+    page.getByRole("button", { name: "Use these answers in a new attempt" }),
+  ).toBeVisible();
+  await page.unroute("**/api/quiz/complete");
+  await page
+    .getByRole("button", { name: "Use these answers in a new attempt" })
+    .click();
+  await page.getByRole("button", { name: "See my results" }).click();
   await expect(page).toHaveURL(/\/results\//);
 });
 test("resource failures are isolated; course and lead failures never show success", async ({
@@ -405,7 +408,7 @@ test("resource failures are isolated; course and lead failures never show succes
   await page.route("**/api/courses/*/interest", (route) =>
     route.fulfill({ status: 500, json: { error: { code: "FAILED" } } }),
   );
-  await page.getByRole("button", { name: "View course" }).click();
+  await page.getByRole("button", { name: "Record demo interest" }).click();
   await expect(page.locator(".error-panel")).toBeVisible();
   await expect(
     page.getByRole("link", { name: /Continue to provider/ }),
@@ -437,7 +440,9 @@ test("unowned results recover safely and blocked browser storage permits in-memo
   await page.goto(`/results/${attemptId}`);
   await expect(page.locator(".error-panel")).toBeVisible();
   await expect(
-    page.getByRole("heading", { name: "A few directions to explore." }),
+    page.getByRole("heading", {
+      name: /Your interest areas to explore|Explore all six interest areas/,
+    }),
   ).toHaveCount(0);
   const blocked = await context.browser()!.newContext({
     extraHTTPHeaders: { "x-forwarded-for": crypto.randomUUID() },
@@ -490,7 +495,7 @@ test("empty options remain usable; keyboard navigation and page widths work", as
     page.getByText("No course options are available for this direction yet."),
   ).toBeVisible();
   await expect(page.getByRole("link", { name: "Try an activity" })).toHaveCount(
-    0,
+    3,
   );
   await expect(
     page.getByRole("heading", { name: "Join a community" }),

@@ -3,7 +3,7 @@ import Link from "next/link";
 import { ArrowRight, Check, Clock, Lightbulb } from "lucide-react";
 import { useEffect, useState } from "react";
 import { activities } from "@/lib/frontend/activities";
-import { resultSchema } from "@/lib/frontend/contracts";
+import { allCareerViews, resultSchema } from "@/lib/frontend/contracts";
 import { read, save, sessionId } from "@/lib/frontend/storage";
 import {
   Back,
@@ -40,10 +40,10 @@ export default function Explore({
   if (resource.error)
     return <ErrorState error={resource.error} retry={resource.retry} />;
   if (!resource.data) return <Loading />;
-  const role = resource.data.result.recommendations.find(
+  const role = allCareerViews(resource.data.result).find(
     (r) => r.id === roleId,
   );
-  const activity = activities[roleId];
+  const activity = role?.activity ?? activities[roleId];
   if (!role || !activity)
     return (
       <Empty>

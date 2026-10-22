@@ -40,6 +40,8 @@ try {
     "supabase/migrations/202610210002_frontend.sql",
     "supabase/migrations/202610220001_hosted_compatibility.sql",
     "supabase/demo_enrichment.sql",
+    "supabase/migrations/202610230001_interest_areas.sql",
+    "supabase/career_examples.sql",
   ]) {
     const fullPath = new URL(`../${path}`, import.meta.url);
     const info = await stat(fullPath);
@@ -62,6 +64,8 @@ try {
       "supabase/migrations/202610210002_frontend.sql",
       "supabase/migrations/202610220001_hosted_compatibility.sql",
       "supabase/demo_enrichment.sql",
+      "supabase/migrations/202610230001_interest_areas.sql",
+      "supabase/career_examples.sql",
     ]) {
       const result = spawnSync(
         "docker",

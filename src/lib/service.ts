@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { publicAdvisor, publicResult } from "./public-content";
 import {
   active,
   attempt,
@@ -66,6 +67,7 @@ export async function start(req: Request) {
   return write(req, sid, "start", input);
 }
 export async function complete(req: Request) {
+  await requireFrontendSchema();
   const sid = await session(req),
     input = parse(completeSchema, await body(req));
   const current = await attempt(input.attemptId, sid);
@@ -80,7 +82,10 @@ export async function complete(req: Request) {
         "CONFLICT",
         "This attempt has already been completed with different answers",
       );
-    return { attemptId: input.attemptId, result: current.result_json };
+    return {
+      attemptId: input.attemptId,
+      result: publicResult(current.result_json),
+    };
   }
   const result = calculate(await catalog(), input.answers);
   const saved = check(
@@ -92,14 +97,14 @@ export async function complete(req: Request) {
     }),
   );
   if (!saved) throw new ApiError(404, "NOT_FOUND", "Quiz attempt not found");
-  return { attemptId: input.attemptId, result: saved };
+  return { attemptId: input.attemptId, result: publicResult(saved) };
 }
 export async function results(req: Request, id: string) {
   const sid = await session(req),
     a = await attempt(parse(uuid, id), sid);
   if (a.status !== "completed")
     throw new ApiError(404, "NOT_FOUND", "Completed result not found");
-  return { attemptId: a.id, result: a.result_json };
+  return { attemptId: a.id, result: publicResult(a.result_json) };
 }
 async function categoryIds(req: Request) {
   const params = new URL(req.url).searchParams;
@@ -143,17 +148,6 @@ export async function advisorDetail(_req: Request, id: string) {
   if (!a) throw new ApiError(404, "NOT_FOUND", "Advisor not found");
   return { advisor: publicAdvisor(a) };
 }
-function publicAdvisor(a: Advisor) {
-  return {
-    id: a.id,
-    category_id: a.category_id,
-    name: a.name,
-    specialty: a.specialty,
-    summary: a.summary,
-    support_types: a.support_types,
-    is_demo: a.is_demo,
-  };
-}
 export async function interest(req: Request, id: string) {
   await requireFrontendSchema();
   const sid = await session(req);
@@ -162,7 +156,7 @@ export async function interest(req: Request, id: string) {
     await body(req),
   );
   const { course: c } = await courseDetail(req, id);
-  if (!c.url)
+  if (!c.is_demo && !c.url)
     throw new ApiError(409, "NO_PROVIDER_URL", "No provider URL is configured");
   return write(req, sid, `interest:${id}`, { ...input, courseId: id });
 }

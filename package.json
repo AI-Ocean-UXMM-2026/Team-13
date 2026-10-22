@@ -18,7 +18,8 @@
     "lint": "eslint src",
     "test:e2e": "playwright test",
     "test:frontend:integration": "node scripts/frontend-integration-local.mjs",
-    "db:check": "node scripts/check-db.mjs"
+    "db:check": "node scripts/check-db.mjs",
+    "mascots:render": "node --import tsx scripts/render-mascot-cards.mts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.0.0",

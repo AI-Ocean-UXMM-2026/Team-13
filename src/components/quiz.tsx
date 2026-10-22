@@ -5,7 +5,11 @@ import { ArrowLeft, ArrowRight, ShieldCheck } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { api, RequestError } from "@/lib/frontend/api";
-import { quizSchema, resultSchema } from "@/lib/frontend/contracts";
+import {
+  quizSchema,
+  resultSchema,
+  startResponse,
+} from "@/lib/frontend/contracts";
 import { interestMascots } from "@/lib/frontend/interest-mascots";
 import {
   type Draft,
@@ -43,6 +47,7 @@ export default function Quiz() {
   const [resume, setResume] = useState(false);
   const [invalid, setInvalid] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [conflict, setConflict] = useState(false);
   const [error, setError] = useState<Error>();
   const heading = useRef<HTMLHeadingElement>(null);
   const lock = useRef(false);
@@ -143,16 +148,38 @@ export default function Quiz() {
       finish(response.attemptId);
     } catch (e) {
       if (e instanceof RequestError && e.status === 409) {
-        try {
-          const saved = await api(
-            `/api/results/${draft!.attemptId}`,
-            resultSchema,
-          );
-          finish(saved.attemptId);
-        } catch (recovery) {
-          setError(recovery as Error);
-        }
+        setConflict(true);
+        setError(undefined);
       } else setError(e as Error);
+    } finally {
+      lock.current = false;
+      setBusy(false);
+    }
+  }
+  async function useChangedAnswers() {
+    if (lock.current || !draft) return;
+    lock.current = true;
+    setBusy(true);
+    const receipt = `career.conflict.${sessionId()}.${draft.attemptId}`;
+    const key = read(receipt) ?? crypto.randomUUID();
+    save(receipt, key);
+    try {
+      const started = await api("/api/quiz/start", startResponse, {
+        body: { entryReason: draft.entryReason },
+        key,
+      });
+      // Persist the new attempt before submission so a refresh retains these answers.
+      const next = {
+        ...draft,
+        attemptId: started.attemptId,
+        updatedAt: Date.now(),
+      };
+      storeDraft(next);
+      setDraft(next);
+      setConflict(false);
+      setError(undefined);
+    } catch (e) {
+      setError(e as Error);
     } finally {
       lock.current = false;
       setBusy(false);
@@ -269,7 +296,35 @@ export default function Quiz() {
             </label>
           ))}
         </fieldset>
-        {error && <ErrorState error={error} retry={complete} />}
+        {conflict && (
+          <div className="notice" role="alert">
+            <h2>This attempt already has a saved result</h2>
+            <p>
+              Your current answers differ from that result. Your changed answers
+              are still saved in this browser.
+            </p>
+            <Link href={`/results/${draft.attemptId}`} className="text-link">
+              View the earlier result
+            </Link>{" "}
+            <button
+              className="button secondary"
+              disabled={busy}
+              onClick={useChangedAnswers}
+            >
+              Use these answers in a new attempt
+            </button>
+            <p>
+              After creating the new attempt, select “See my results” to submit
+              these answers.
+            </p>
+          </div>
+        )}
+        {error && (
+          <ErrorState
+            error={error}
+            retry={conflict ? useChangedAnswers : complete}
+          />
+        )}
         <div className="quiz-controls">
           <button
             className="button secondary"
@@ -282,7 +337,7 @@ export default function Quiz() {
           </button>
           <button
             className="button primary"
-            disabled={busy || !validSelection(q, selected)}
+            disabled={busy || conflict || !validSelection(q, selected)}
             onClick={() =>
               draft.currentQuestionIndex === 19
                 ? complete()

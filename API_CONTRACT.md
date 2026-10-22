@@ -49,8 +49,8 @@ The abbreviated example must be expanded to all 20 questions. Result contains:
 
 - `profileLabel`: RIASEC-inspired career interest profile.
 - `riasec`, `maxima`, `percentages`: maps with all six category codes.
-- `rankedCategories`: all six `{id,code,name,description,score,maxScore,percentage}` in raw score order.
-- `topCategories`: codes of the up to three recommended roles.
+- `rankedCategories`: all six `{id,code,name,description,score,maxScore,percentage}` in normalized score order for v2; legacy snapshots retain their original order.
+- `topCategories`: codes of qualifying interest areas (top three plus cutoff ties; empty in neutral browsing).
 - `recommendations`: `{id,category_id,title,description,is_demo,category,reason,suggested_next_step?}`.
 - `profile`: normalized careerClarity, explorationPreference, coursePriorities[], learningActivity, studyOptions[], readiness, desiredSupport, nextAction.
 - `courses` and `advisors`: personalized active listings.
@@ -60,9 +60,9 @@ Results are immutable snapshots. Identical completion retries (even reordered) r
 
 ## Listing fields
 
-Course includes `id,category_id,title,summary,provider,price_label,url,study_option,affordable,flexible,is_demo`. Public advisor listing/detail includes `id,category_id,name,specialty,summary,support_types,is_demo`; private `contact` is omitted. Live listing endpoints also return content status/timestamps from the database; frontend clients should ignore additional fields. SponsoredAd includes `id,category_ids,title,summary,provider_name,url,placement_key,is_sponsored,is_demo,starts_at,ends_at,label:'Sponsored'`. URL fields are HTTP(S) or null; interest returns 409 if no provider URL exists.
+Course includes `id,category_id,title,summary,provider,price_label,url,study_option,affordable,flexible,is_demo`. Public advisor listing/detail includes `id,category_id,name,specialty,summary,support_types,is_demo`; private `contact` is omitted. Live listing endpoints also return content status/timestamps from the database; frontend clients should ignore additional fields. SponsoredAd includes `id,category_ids,title,summary,provider_name,url,placement_key,is_sponsored,is_demo,starts_at,ends_at,label:'Sponsored'`. URL fields are HTTP(S) or null; non-demo interest returns 409 if no provider URL exists.
 
-Seeded `example.com` links are clearly labelled mock destinations, not real courses. Open a provider URL only after a successful interest response; no payment or checkout occurs. Demo advisor contacts are fictitious. A lead response confirms storage only, never an email, booking, or actual advisor contact.
+Fictional courses have no provider URL. Demo interest records a local request and never redirects. Real provider URLs may open only after a successful non-demo interest response; no payment or checkout occurs. Demo advisor contacts are fictitious. A lead response confirms storage only, never an email, booking, or actual advisor contact.
 
 ## Write retries and attempt linkage
 
@@ -107,3 +107,7 @@ All failures return `{error:{code:string,message:string}}` without SQL details, 
 | 503 | Missing configuration, network/access failure, missing frontend schema (`SCHEMA_NOT_READY`), or unseeded health dependency |
 
 Every endpoint is limited to 120 requests/minute per apparent IP per process. The limiter is a demo safeguard; trusted proxy configuration and shared durable limiting are required before a public multi-instance deployment.
+
+## Normalized interest-area contract (v2)
+
+See `docs/INTEREST_AREAS.md` for the current result contract and migration order. New results add `areas` (all six categories with examples and ordered resources), `recommendationMode`, and scoring version `riasec-demo-v2-normalized`. Selected areas meet 50%, with all ties at the third-place cutoff included. `recommendations` is now zero to thirty examples, not exactly three careers. Advisor contact fields are excluded from all result projections, including legacy snapshots. Demo interest returns `url: null` and never navigates to a provider.

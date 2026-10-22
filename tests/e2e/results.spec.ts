@@ -164,7 +164,7 @@ test("Reflect summarizes existing answers, preserves tied ordering and links, an
   );
   await expect(
     page
-      .getByRole("group", { name: "Choose a recommended direction" })
+      .getByRole("group", { name: "Choose an interest area" })
       .getByRole("button")
       .first(),
   ).toHaveAttribute("aria-pressed", "true");

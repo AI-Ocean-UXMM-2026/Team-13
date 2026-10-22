@@ -20,12 +20,18 @@ const priorityLabels: Readonly<Record<string, string>> = {
 
 export function resultSummary(result: ResultView) {
   const neutralInterests =
-    result.rankedCategories.length > 0 &&
-    result.rankedCategories.every((category) => category.score === 0);
+    result.recommendationMode === "browse" ||
+    (result.rankedCategories.length > 0 &&
+      result.rankedCategories.every((category) => category.score === 0));
   // Categories arrive in backend order, including its tie-breaker. Never rank here.
   const interests = neutralInterests
     ? []
-    : result.rankedCategories.slice(0, 3).map((category) => category.name);
+    : result.areas
+      ? result.areas.filter((a) => a.recommended).map((a) => a.name)
+      : result.rankedCategories
+          .slice(0, 3)
+          .filter((c) => c.score !== 0)
+          .map((category) => category.name);
   const preference = result.profile?.explorationPreference;
   const exploration =
     preference && Object.hasOwn(explorationLabels, preference)
