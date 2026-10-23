@@ -16,6 +16,8 @@ import {
   advisorsSchema,
   coursesSchema,
   recommendationViews,
+  inResultOrder,
+  type AreaView,
   resultSchema,
   safeExternalUrl,
 } from "@/lib/frontend/contracts";
@@ -25,7 +27,11 @@ function Resources({
   category,
   title,
   attemptId,
+  area,
+  studyOptions,
 }: {
+  area?: AreaView;
+  studyOptions?: string[];
   category: string;
   title: string;
   attemptId: string;
@@ -69,6 +75,18 @@ function Resources({
           <span className="eyebrow">COURSES</span>
         </div>
         <p className="muted">Courses for {title.toLowerCase()}.</p>
+        {area &&
+          studyOptions?.some((v) => v !== "not_sure") &&
+          courses.data &&
+          !courses.data.courses.some(
+            (c) => c.study_option && studyOptions.includes(c.study_option),
+          ) && (
+            <p className="notice">
+              No example course here matches your selected study format. These
+              are alternatives to explore, not a match to your study
+              requirements.
+            </p>
+          )}
         {courses.error ? (
           <ErrorState error={courses.error} retry={courses.retry} />
         ) : !courses.data ? (
@@ -77,8 +95,7 @@ function Resources({
           <Empty>No course options are available for this direction yet.</Empty>
         ) : (
           <div className="course-grid">
-            {courses.data.courses
-              .slice(0, 3)
+            {inResultOrder(courses.data.courses, area?.courses)
               .map(resourceView)
               .map((c) => (
                 <article className="resource-card" key={c.id}>
@@ -89,6 +106,9 @@ function Resources({
                   </div>
                   <p className="provider">{c.provider}</p>
                   <h3>{c.title}</h3>
+                  {c.is_demo && (
+                    <p className="eyebrow">Example course · Fictional</p>
+                  )}
                   <p className="resource-summary">{c.summary}</p>
                   <p className="price-label">{c.price_label}</p>
                   <Link
@@ -130,8 +150,7 @@ function Resources({
           </Empty>
         ) : (
           <div className="advisor-grid">
-            {advisors.data.advisors
-              .slice(0, 3)
+            {inResultOrder(advisors.data.advisors, area?.advisors)
               .map(resourceView)
               .map((a) => (
                 <article className="resource-card" key={a.id}>
@@ -141,6 +160,9 @@ function Resources({
                     </span>
                   </div>
                   <h3>{a.name}</h3>
+                  {a.is_demo && (
+                    <p className="eyebrow">Example advisor · Fictional</p>
+                  )}
                   <p className="advisor-specialty">{a.specialty}</p>
                   {a.summary && <p className="resource-summary">{a.summary}</p>}
                   <Link
@@ -232,7 +254,13 @@ export default function Options({
   if (resource.error)
     return <ErrorState error={resource.error} retry={resource.retry} />;
   if (!resource.data) return <Loading />;
-  const directions = recommendationViews(resource.data.result);
+  const result = resource.data.result;
+  const directions = result.areas
+    ? [
+        ...result.areas.filter((a) => a.recommended),
+        ...result.areas.filter((a) => !a.recommended),
+      ].map((a) => ({ id: a.id, category: a.code, title: a.name }))
+    : recommendationViews(result);
   const active =
     directions.find((r) => r.category === selected) ?? directions[0];
   return (
@@ -263,7 +291,7 @@ export default function Options({
             <div
               className="direction-tabs"
               role="group"
-              aria-label="Choose a recommended direction"
+              aria-label="Choose an interest area"
             >
               {directions.map((r) => (
                 <button
@@ -279,15 +307,46 @@ export default function Options({
                 </button>
               ))}
             </div>
-            <p className="selected-hint">
-              {active.suggested_next_step ??
-                resource.data.result.nextAction.text}
-            </p>
+            <p className="selected-hint">{result.nextAction.text}</p>
           </section>
+          {result.areas && (
+            <section
+              className="resource-section"
+              aria-label="Try a beginner activity"
+            >
+              <h2>Try a beginner activity</h2>
+              <div className="career-example-grid">
+                {result.areas
+                  .find((a) => a.code === active.category)
+                  ?.careers.filter((r) => r.activity)
+                  .map((r) => (
+                    <article className="career-example" key={r.id}>
+                      <h3>{r.title}</h3>
+                      <p>{r.activity?.title}</p>
+                      <Link
+                        className="button secondary"
+                        href={`/explore/${r.id}?attemptId=${attemptId}`}
+                        onClick={() =>
+                          void track({
+                            eventName: "explore_clicked",
+                            attemptId,
+                            metadata: { screen: "options", action: "explore" },
+                          })
+                        }
+                      >
+                        Try an activity
+                      </Link>
+                    </article>
+                  ))}
+              </div>
+            </section>
+          )}
           <Resources
             category={active.category}
             title={active.title}
             attemptId={attemptId}
+            area={result.areas?.find((a) => a.code === active.category)}
+            studyOptions={result.profile?.studyOptions}
           />
         </>
       )}

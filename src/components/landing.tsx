@@ -15,20 +15,34 @@ import {
   type Draft,
   type EntryReason,
   loadDraft,
+  read,
   save,
   sessionId,
   startKey,
   storeDraft,
 } from "@/lib/frontend/storage";
 import { ErrorState } from "./shared";
+import { CompanionGallery } from "./companion-gallery";
 export default function Landing() {
   const [reason, setReason] = useState<EntryReason>();
   const [draft, setDraft] = useState<Draft | null>(null);
+  const [latest, setLatest] = useState<string>();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<Error>();
   const lock = useRef(false);
   const router = useRouter();
-  useEffect(() => setDraft(loadDraft()), []);
+  useEffect(() => {
+    setDraft(loadDraft());
+    try {
+      const saved = JSON.parse(read("career.completed") ?? "null");
+      if (
+        saved?.sessionId === sessionId() &&
+        typeof saved.attemptId === "string" &&
+        /^[0-9a-f-]{36}$/i.test(saved.attemptId)
+      )
+        setLatest(saved.attemptId);
+    } catch {}
+  }, []);
   async function start() {
     if (!reason || lock.current) return;
     if (
@@ -75,14 +89,9 @@ export default function Landing() {
             Your future doesn’t have to be a <span>guessing game.</span>
           </h1>
           <p className="hero-subtitle">
-            Explore your interests, discover career possibilities, and find your
-            next step with Wayfinder.
+            Explore your interests, discover career possibilities, and find your{" "}
+            <mark>smallest and simple next step</mark> with Wayfinder.
           </p>
-          <div className="hero-actions">
-            <a className="button primary" href="#start">
-              Explore my career <ArrowRight size={18} aria-hidden="true" />
-            </a>
-          </div>
         </section>
 
         <section
@@ -101,12 +110,12 @@ export default function Landing() {
               {
                 Icon: Compass,
                 title: "Reflect",
-                text: "Meet up to three career directions and understand why they appeared.",
+                text: "Explore your interest areas and several example careers within each.",
               },
               {
                 Icon: ArrowRight,
                 title: "Explore",
-                text: "Find a course or advisor to help you take your next step.",
+                text: "Try a useful activity and explore courses and advisors.",
               },
             ].map(({ Icon, title, text }, i) => (
               <article key={title}>
@@ -131,6 +140,8 @@ export default function Landing() {
           </span>
         </div>
       </div>
+
+      <CompanionGallery />
 
       <section
         className="start-section"
@@ -187,9 +198,17 @@ export default function Landing() {
             <ArrowRight size={17} aria-hidden="true" />
           </button>
           <p className="fine-print">
-            A starting point for exploration. Never a final career judgment.
+            Complete the quiz to discover your companion. A starting point for
+            exploration. Never a final career judgment.
           </p>
         </div>
+        {latest && (
+          <p className="resume-note">
+            <Link href={`/results/${latest}`}>
+              Return to my latest results →
+            </Link>
+          </p>
+        )}
         {draft && (
           <p className="resume-note">
             Your unfinished quiz is here.{" "}

@@ -97,7 +97,7 @@ async function screenshot(page: Page, name: string) {
   });
 }
 
-test("Explore limits resources, keeps API order, caches directions, and follows the wireframe at every width", async ({
+test("Explore displays resources, keeps API order, caches directions, and follows the wireframe at every width", async ({
   page,
 }, info) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
@@ -133,7 +133,7 @@ test("Explore limits resources, keeps API order, caches directions, and follows 
   });
   const community = page.getByRole("region", { name: "Join a community" });
   await expect(courseSection.getByRole("heading", { level: 3 })).toHaveText(
-    [4, 1, 5].map(
+    [4, 1, 5, 2, 3].map(
       (n) => `Course ${n}: an introduction to visual communication`,
     ),
   );
@@ -141,6 +141,7 @@ test("Explore limits resources, keeps API order, caches directions, and follows 
     "Advisor 3",
     "Advisor 1",
     "Advisor 4",
+    "Advisor 2",
   ]);
   await expect(
     courseSection.getByRole("link", { name: "View course" }).first(),
@@ -172,8 +173,9 @@ test("Explore limits resources, keeps API order, caches directions, and follows 
   await expect(
     page.getByRole("region", { name: "Sponsored content", exact: true }),
   ).toHaveCount(2);
-  await expect(page.locator("main")).not.toContainText(/\bdemo\b/i);
   await expect(courseSection.locator(".price-label")).toHaveText([
+    "Cost to be confirmed",
+    "Cost to be confirmed",
     "Cost to be confirmed",
     "Cost to be confirmed",
     "Cost to be confirmed",
@@ -194,7 +196,7 @@ test("Explore limits resources, keeps API order, caches directions, and follows 
   ]);
 
   const buttons = page
-    .getByRole("group", { name: "Choose a recommended direction" })
+    .getByRole("group", { name: "Choose an interest area" })
     .getByRole("button");
   await page.evaluate(() => window.scrollTo({ top: 80, behavior: "instant" }));
   const scroll = await page.evaluate(() => scrollY);
@@ -207,8 +209,8 @@ test("Explore limits resources, keeps API order, caches directions, and follows 
     page.getByRole("heading", { name: "Sponsored offers" }),
   ).toHaveCount(0);
   await buttons.first().click();
-  await expect(courseSection.getByRole("article")).toHaveCount(3);
-  await expect(advisorSection.getByRole("article")).toHaveCount(3);
+  await expect(courseSection.getByRole("article")).toHaveCount(5);
+  await expect(advisorSection.getByRole("article")).toHaveCount(4);
   await expect(page.getByText("Sponsored", { exact: true })).toHaveCount(2);
   for (const resource of ["courses", "advisors", "ads"]) {
     expect(requests[`${resource}:A`]).toBe(1);
@@ -268,7 +270,6 @@ test("Explore limits resources, keeps API order, caches directions, and follows 
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(
     "Course 4: an introduction to visual communication",
   );
-  await expect(page.locator("main")).not.toContainText(/\bdemo\b/i);
   await expect(
     page.getByText("Cost to be confirmed", { exact: true }),
   ).toBeVisible();
@@ -277,7 +278,6 @@ test("Explore limits resources, keeps API order, caches directions, and follows 
   );
   await page.goto(`/advisor/${advisors[0].id}?attemptId=${attemptId}`);
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Advisor 3");
-  await expect(page.locator("main")).not.toContainText(/\bdemo\b/i);
   await expect(
     page.getByRole("button", { name: "Submit request" }),
   ).toBeVisible();

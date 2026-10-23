@@ -34,6 +34,8 @@ export function check<T>(response: {
   return response.data as NonNullable<T>;
 }
 export async function requireFrontendSchema() {
+  // Only the existing persistence contract is required. Optional career catalog
+  // columns (activity/display_order) already have application fallbacks.
   const result = await db()
     .from("app_migrations")
     .select("version", { head: true, count: "exact" })

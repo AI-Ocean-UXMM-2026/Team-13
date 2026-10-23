@@ -86,7 +86,7 @@ if (!url || !key) {
   if (failures) {
     console.log("\nDatabase is not ready. No data or schema was changed.");
     console.log(
-      "For missing frontend fields/functions: review and apply supabase/migrations/202610210002_frontend.sql, then supabase/demo_enrichment.sql.",
+      "Check the deployed environment and existing frontend schema with read-only inspection. Optional career catalog migrations are not required to start or complete the quiz. Do not apply migrations or seed files to the hosted database as part of this check.",
     );
     console.log(
       "For connection/access failures: check the network and server environment privately.",

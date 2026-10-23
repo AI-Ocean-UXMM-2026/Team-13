@@ -29,6 +29,8 @@ export function CourseDetail({
   const [busy, setBusy] = useState(false);
   const [failure, setFailure] = useState<Error>();
   const [url, setUrl] = useState<string>();
+  const [recorded, setRecorded] = useState(false);
+  const [demoRecorded, setDemoRecorded] = useState(false);
   const key = useRef<string>(undefined);
   const lock = useRef(false);
   async function record() {
@@ -50,7 +52,9 @@ export function CourseDetail({
         { body: attemptId ? { attemptId } : {}, key: key.current },
       );
       const safe = safeExternalUrl(response.url);
-      if (safe) setUrl(safe);
+      if (!response.isDemo && safe) setUrl(safe);
+      setDemoRecorded(response.isDemo);
+      setRecorded(true);
     } catch (e) {
       setFailure(e as Error);
     } finally {
@@ -82,39 +86,57 @@ export function CourseDetail({
             <dd>Explore first. No registration here.</dd>
           </div>
         </dl>
-        <p className="notice">
-          This is a fictional example course. The provider link demonstrates
-          navigation; it is not a real registration or purchase.
-        </p>
+        {course.is_demo && (
+          <p className="notice">
+            Example course · Fictional. You can record demo interest, but no
+            enrollment, purchase, or real provider connection takes place.
+          </p>
+        )}
       </div>
       <aside className="action-card">
         <span className="big-symbol" aria-hidden>
           <BookOpen size={26} />
         </span>
-        {url ? (
+        {recorded ? (
           <div role="status">
             <h2>Your interest has been recorded.</h2>
-            <p>
-              Continue to the example provider in this tab. You’ll leave
-              Wayfinder.
-            </p>
-            <a className="button primary full" href={url}>
-              Continue to provider ↗
-            </a>
+            {demoRecorded ? (
+              <p>
+                Your demo interest was saved. This fictional course has no
+                provider registration, purchase, or enrollment.
+              </p>
+            ) : (
+              <p>
+                You can now continue to the provider. You’ll leave Wayfinder.
+              </p>
+            )}
+            {!demoRecorded && url && (
+              <a className="button primary full" href={url}>
+                Continue to provider ↗
+              </a>
+            )}
+            <Back attemptId={attemptId} />
           </div>
         ) : (
           <>
             <h2>Curious to learn more?</h2>
             <p>
-              We’ll record your interest first, then offer a link to the
-              provider.
+              {course.is_demo
+                ? "Try recording interest in this fictional example course."
+                : course.url
+                  ? "We’ll record your interest first, then offer a link to the provider."
+                  : "This course has no provider link yet."}
             </p>
             <button
               className="button primary full"
-              disabled={busy}
+              disabled={busy || (!course.is_demo && !course.url)}
               onClick={record}
             >
-              {busy ? "Recording your interest…" : "View course"}{" "}
+              {busy
+                ? "Recording your interest…"
+                : course.is_demo
+                  ? "Record demo interest"
+                  : "View course"}{" "}
               <ArrowRight size={16} aria-hidden="true" />
             </button>
             <p className="fine-print">
@@ -136,9 +158,9 @@ export function AdvisorDetail({
 }) {
   const resource = useResource(`/api/advisors/${advisorId}`, advisorEnvelope);
   const [fields, setFields] = useState({
-    studentName: "",
+    studentName: "Example student",
     contactMethod: "email",
-    contactValue: "",
+    contactValue: "student@example.com",
     consent: false,
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -215,9 +237,9 @@ export function AdvisorDetail({
           <h2>About this profile</h2>
           <p>
             This is a fictional advisor profile. Submitted requests are stored
-            in this app's database. No message is sent, no appointment is booked,
-            and no response is promised. Use fictional contact details when
-            trying it.
+            in this app's database. No message is sent, no appointment is
+            booked, and no response is promised. Use fictional contact details
+            when trying it.
           </p>
         </div>
       </div>
@@ -243,8 +265,9 @@ export function AdvisorDetail({
             </span>
             <h2>Request contact</h2>
             <p className="muted">
-              Try the form with fictional details. Requests are recorded without
-              sending a message.
+              The form starts with fictional sample details. Keep contact
+              details fictional. Requests are recorded without sending a
+              message.
             </p>
             <form onSubmit={submit} noValidate>
               <fieldset disabled={busy}>
