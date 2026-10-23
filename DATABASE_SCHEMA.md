@@ -55,4 +55,4 @@ Deterministic UUIDs make seeding repeatable. Seed includes 6 categories, exactly
 
 ## Interest-area extension
 
-After the hosted compatibility migration, apply `202610230001_interest_areas.sql`. It adds `career_roles.display_order` and nullable JSON `activity` (title, minutes, steps), updates the write RPC to accept demo courses with no URL, and records its readiness marker. `supabase/career_examples.sql` supplies 18 example careers, preserving original IDs and real records, and clears fictional course URLs. Saved quiz snapshots are not rewritten.
+Optional local demo enhancement `202610230001_interest_areas.sql` adds `career_roles.display_order` and nullable JSON `activity` (title, minutes, steps), and updates the write RPC to accept demo courses with no URL. Its marker is not required by application readiness. `supabase/career_examples.sql` supplies 18 local example careers, preserving original IDs and real records, and clears fictional course URLs. Saved quiz snapshots are not rewritten. The app also supports the existing frontend schema without these fields or this content; neither file is required or authorized for the hosted quiz fix.

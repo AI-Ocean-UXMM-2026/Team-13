@@ -124,4 +124,4 @@ Health now checks the frontend migration marker as well as the seeded categories
 
 ## Interest-area MVP
 
-The current implementation uses normalized interest areas, 18 example careers with activities, and explicitly fictional courses/advisors. See [the implementation notes](docs/INTEREST_AREAS.md) for behavior, backward compatibility, and the separately approved hosted release procedure. Earlier investigation notes above describe the database at inspection time, not a live readiness guarantee.
+The current implementation uses normalized interest areas, optional local demo career examples with activities, and explicitly fictional courses/advisors. It supports the existing hosted frontend schema without a new migration or seed update. See [the implementation notes](docs/INTEREST_AREAS.md) for behavior and backward compatibility. Earlier investigation notes above describe the database at inspection time, not a live readiness guarantee.
