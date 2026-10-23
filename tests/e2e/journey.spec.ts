@@ -124,14 +124,20 @@ test("mobile-first journey restores answers, supports two choices, and confirms 
     "Reflect",
     "Explore",
   ]);
-  const cta = page.getByRole("link", { name: "Explore my career" });
+  await expect(
+    page.getByRole("link", { name: "Explore my career", exact: true }),
+  ).toHaveCount(0);
+  const cta = page.getByRole("link", {
+    name: "Discover your companion",
+    exact: true,
+  });
   const ctaBounds = (await cta.boundingBox())!;
   const stepBounds = (await steps.boundingBox())!;
   const metaBounds = (await page.locator(".hero-meta").boundingBox())!;
   const startBounds = (await page.locator("#start").boundingBox())!;
-  expect(ctaBounds.y + ctaBounds.height).toBeLessThan(stepBounds.y);
   expect(stepBounds.y + stepBounds.height).toBeLessThan(metaBounds.y);
-  expect(metaBounds.y + metaBounds.height).toBeLessThan(startBounds.y);
+  expect(metaBounds.y + metaBounds.height).toBeLessThan(ctaBounds.y);
+  expect(ctaBounds.y + ctaBounds.height).toBeLessThan(startBounds.y);
   await cta.click();
   await expect(page).toHaveURL(/#start$/);
   await expect(page.locator("#start")).toBeInViewport();

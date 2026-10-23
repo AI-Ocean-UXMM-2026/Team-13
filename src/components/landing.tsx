@@ -22,6 +22,7 @@ import {
   storeDraft,
 } from "@/lib/frontend/storage";
 import { ErrorState } from "./shared";
+import { CompanionGallery } from "./companion-gallery";
 export default function Landing() {
   const [reason, setReason] = useState<EntryReason>();
   const [draft, setDraft] = useState<Draft | null>(null);
@@ -88,14 +89,9 @@ export default function Landing() {
             Your future doesn’t have to be a <span>guessing game.</span>
           </h1>
           <p className="hero-subtitle">
-            Explore your interests, discover career possibilities, and find your
-            next step with Wayfinder.
+            Explore your interests, discover career possibilities, and find your{" "}
+            <mark>smallest and simple next step</mark> with Wayfinder.
           </p>
-          <div className="hero-actions">
-            <a className="button primary" href="#start">
-              Explore my career <ArrowRight size={18} aria-hidden="true" />
-            </a>
-          </div>
         </section>
 
         <section
@@ -119,7 +115,7 @@ export default function Landing() {
               {
                 Icon: ArrowRight,
                 title: "Explore",
-                text: "Try a useful activity and explore fictional course and advisor examples.",
+                text: "Try a useful activity and explore courses and advisors.",
               },
             ].map(({ Icon, title, text }, i) => (
               <article key={title}>
@@ -144,6 +140,8 @@ export default function Landing() {
           </span>
         </div>
       </div>
+
+      <CompanionGallery />
 
       <section
         className="start-section"
