@@ -127,19 +127,18 @@ test("mobile-first journey restores answers, supports two choices, and confirms 
   await expect(
     page.getByRole("link", { name: "Explore my career", exact: true }),
   ).toHaveCount(0);
-  const cta = page.getByRole("link", {
-    name: "Discover your companion",
-    exact: true,
+  const gallery = page.getByRole("region", {
+    name: "Meet your exploration companions",
   });
-  const ctaBounds = (await cta.boundingBox())!;
+  await expect(gallery.getByRole("link")).toHaveCount(0);
+  const galleryBounds = (await gallery.boundingBox())!;
   const stepBounds = (await steps.boundingBox())!;
   const metaBounds = (await page.locator(".hero-meta").boundingBox())!;
   const startBounds = (await page.locator("#start").boundingBox())!;
   expect(stepBounds.y + stepBounds.height).toBeLessThan(metaBounds.y);
-  expect(metaBounds.y + metaBounds.height).toBeLessThan(ctaBounds.y);
-  expect(ctaBounds.y + ctaBounds.height).toBeLessThan(startBounds.y);
-  await cta.click();
-  await expect(page).toHaveURL(/#start$/);
+  expect(metaBounds.y + metaBounds.height).toBeLessThan(galleryBounds.y);
+  expect(galleryBounds.y + galleryBounds.height).toBeLessThan(startBounds.y);
+  await page.locator("#start").scrollIntoViewIfNeeded();
   await expect(page.locator("#start")).toBeInViewport();
   expect(startRequests).toHaveLength(0);
   await expect(

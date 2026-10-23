@@ -636,10 +636,6 @@ main:focus {
   font-style: italic;
   line-height: 1.5;
 }
-.companion-gallery-action {
-  margin-top: 28px;
-  text-align: center;
-}
 @media (hover: hover) and (prefers-reduced-motion: no-preference) {
   .gallery-companion:hover {
     transform: translateY(-3px);

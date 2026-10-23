@@ -17,6 +17,7 @@ test("landing companions introduce all six characters before the quiz without st
   await expect(cards).toHaveCount(6);
   await expect(gallery.getByRole("button")).toHaveCount(0);
   await expect(gallery.getByRole("radio")).toHaveCount(0);
+  await expect(gallery.getByRole("link")).toHaveCount(0);
   for (const [i, mascot] of mascotCatalog.entries()) {
     const card = cards.nth(i);
     await card.scrollIntoViewIfNeeded();
@@ -65,7 +66,10 @@ test("landing companions introduce all six characters before the quiz without st
       : [page.viewportSize()!];
   for (const viewport of viewports) {
     await page.setViewportSize(viewport);
-    await expect(page.locator(".hero-subtitle mark")).toHaveCSS("white-space", "nowrap");
+    await expect(page.locator(".hero-subtitle mark")).toHaveCSS(
+      "white-space",
+      "nowrap",
+    );
     await expect
       .poll(() =>
         page.evaluate(
@@ -98,22 +102,29 @@ test("landing companions introduce all six characters before the quiz without st
   await expect(
     page.getByRole("link", { name: "Explore my career", exact: true }),
   ).toHaveCount(0);
-  const galleryLink = gallery.getByRole("link", {
-    name: "Discover your companion",
+  const entryChoice = page.getByRole("radio", {
+    name: /not sure what interests/,
+  });
+  const startButton = page.getByRole("button", {
+    name: "Start exploring",
     exact: true,
   });
+  await expect(startButton).toBeDisabled();
   await page.getByRole("link", { name: "Wayfinder home", exact: true }).focus();
   await page.keyboard.press("Tab");
-  await expect(galleryLink).toBeFocused();
-  await expect(galleryLink).toHaveCSS("outline-style", "solid");
-  const bounds = (await galleryLink.boundingBox())!;
+  await expect(entryChoice).toBeFocused();
+  await page.keyboard.press("Space");
+  await expect(entryChoice).toBeChecked();
+  await page.keyboard.press("Tab");
+  await expect(startButton).toBeFocused();
+  await expect(startButton).toHaveCSS("outline-style", "solid");
+  const bounds = (await startButton.boundingBox())!;
   expect(bounds.height).toBeGreaterThanOrEqual(44);
-  await page.keyboard.press("Enter");
-  await expect(page).toHaveURL(/#start$/);
   await expect(page.locator("#start")).toBeInViewport();
-  await expect(
-    page.getByRole("button", { name: "Start exploring", exact: true }),
-  ).toBeDisabled();
+  await expect(startButton).toBeEnabled();
+  await expect(page.locator(".start-panel > .fine-print")).toHaveText(
+    "Complete the quiz to discover your companion. A starting point for exploration. Never a final career judgment.",
+  );
   expect(apiRequests).toEqual([]);
 });
 
@@ -141,8 +152,10 @@ test("companion text survives failed artwork and reduced motion removes card mov
   await cards.first().hover();
   await expect(cards.first()).toHaveCSS("transform", "none");
   await expect(cards.first()).toHaveCSS("transition-duration", "0s");
-  await gallery
-    .getByRole("link", { name: "Discover your companion", exact: true })
-    .click();
+  await expect(gallery.getByRole("link")).toHaveCount(0);
+  await page.getByRole("radio", { name: /not sure what interests/ }).check();
+  await expect(
+    page.getByRole("button", { name: "Start exploring", exact: true }),
+  ).toBeEnabled();
   await expect(page.locator("#start")).toBeInViewport();
 });

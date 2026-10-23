@@ -198,7 +198,8 @@ export default function Landing() {
             <ArrowRight size={17} aria-hidden="true" />
           </button>
           <p className="fine-print">
-            A starting point for exploration. Never a final career judgment.
+            Complete the quiz to discover your companion. A starting point for
+            exploration. Never a final career judgment.
           </p>
         </div>
         {latest && (

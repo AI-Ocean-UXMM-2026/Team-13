@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { ArrowRight, Sparkles } from "lucide-react";
+import { Sparkles } from "lucide-react";
 import { useState, type CSSProperties } from "react";
 import {
   mascotArt,
@@ -67,11 +67,6 @@ export function CompanionGallery() {
           <CompanionTile key={mascot.id} mascot={mascot} />
         ))}
       </ul>
-      <div className="companion-gallery-action">
-        <a className="button primary" href="#start">
-          Discover your companion <ArrowRight size={17} aria-hidden="true" />
-        </a>
-      </div>
     </section>
   );
 }
